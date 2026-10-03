@@ -98,6 +98,7 @@ defmodule Kfofo.Scrapers.Olx.Client do
 
   defp build_query_params(opts) do
     []
+    |> maybe_put_query("q", Map.get(opts, :neighborhood) || Map.get(opts, :q))
     |> maybe_put_query("sf", Map.get(opts, :sf) && "1")
     |> maybe_put_query("ps", Map.get(opts, :min_price))
     |> maybe_put_query("pe", Map.get(opts, :max_price))

@@ -34,6 +34,12 @@ defmodule Kfofo.Scrapers.OlxTest do
       assert url =~ "ros=2"
       assert url =~ "o=2"
     end
+
+    test "builds URL with neighborhood filter" do
+      url = Olx.build_url(%{state: "sp", city: "sao-paulo", neighborhood: "moema"})
+      assert url =~ "https://dummy-olx.test/imoveis/venda/estado-sp/sao-paulo?"
+      assert url =~ "q=moema"
+    end
   end
 
   describe "extract_next_data/1" do

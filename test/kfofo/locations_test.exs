@@ -23,21 +23,24 @@ defmodule Kfofo.LocationsTest do
     end
 
     test "parses and normalizes predictions from Google Places Autocomplete" do
-      mock_client = fn _url, [params: params] ->
-        assert Keyword.get(params, :input) == "Moema"
-        assert Keyword.get(params, :components) == "country:br"
+      mock_client = fn url, [json: payload, headers: headers] ->
+        assert url =~ "places:autocomplete"
+        assert payload["input"] == "Moema"
+        assert payload["includedRegionCodes"] == ["br"]
+        assert {"content-type", "application/json"} in headers
 
         body = %{
-          "status" => "OK",
-          "predictions" => [
+          "suggestions" => [
             %{
-              "place_id" => "ChIJp9m429tYzpQR7",
-              "description" => "Moema, São Paulo - SP, Brasil",
-              "structured_formatting" => %{
-                "main_text" => "Moema",
-                "secondary_text" => "São Paulo - SP, Brasil"
-              },
-              "types" => ["sublocality_level_1", "sublocality", "political"]
+              "placePrediction" => %{
+                "placeId" => "ChIJp9m429tYzpQR7",
+                "text" => %{"text" => "Moema, São Paulo - SP, Brasil"},
+                "structuredFormat" => %{
+                  "mainText" => %{"text" => "Moema"},
+                  "secondaryText" => %{"text" => "São Paulo - SP, Brasil"}
+                },
+                "types" => ["sublocality_level_1", "sublocality", "political"]
+              }
             }
           ]
         }
@@ -55,9 +58,9 @@ defmodule Kfofo.LocationsTest do
       assert "sublocality_level_1" in prediction.types
     end
 
-    test "handles ZERO_RESULTS gracefully" do
+    test "handles empty suggestions gracefully" do
       mock_client = fn _url, _opts ->
-        {:ok, %{status: 200, body: %{"status" => "ZERO_RESULTS"}}}
+        {:ok, %{status: 200, body: %{"suggestions" => []}}}
       end
 
       assert Locations.search_locations("localizacaoinvalida123", http_client: mock_client) ==
@@ -68,10 +71,12 @@ defmodule Kfofo.LocationsTest do
       mock_client = fn _url, _opts ->
         {:ok,
          %{
-           status: 200,
+           status: 403,
            body: %{
-             "status" => "REQUEST_DENIED",
-             "error_message" => "The provided API key is invalid."
+             "error" => %{
+               "status" => "REQUEST_DENIED",
+               "message" => "The provided API key is invalid."
+             }
            }
          }}
       end
@@ -89,41 +94,38 @@ defmodule Kfofo.LocationsTest do
 
   describe "get_location_details/2" do
     test "fetches and normalizes address components from Google Place Details" do
-      mock_client = fn _url, [params: params] ->
-        assert Keyword.get(params, :place_id) == "place_123"
+      mock_client = fn url, [params: _params, headers: headers] ->
+        assert url =~ "places/place_123"
+        assert {"x-goog-api-key", "dummy_test_key"} in headers
 
         body = %{
-          "status" => "OK",
-          "result" => %{
-            "formatted_address" => "Moema, São Paulo - SP, Brasil",
-            "address_components" => [
-              %{
-                "long_name" => "Moema",
-                "short_name" => "Moema",
-                "types" => ["sublocality_level_1", "sublocality", "political"]
-              },
-              %{
-                "long_name" => "São Paulo",
-                "short_name" => "São Paulo",
-                "types" => ["administrative_area_level_2", "political"]
-              },
-              %{
-                "long_name" => "São Paulo",
-                "short_name" => "SP",
-                "types" => ["administrative_area_level_1", "political"]
-              },
-              %{
-                "long_name" => "Brasil",
-                "short_name" => "BR",
-                "types" => ["country", "political"]
-              }
-            ],
-            "geometry" => %{
-              "location" => %{
-                "lat" => -23.6033,
-                "lng" => -46.6631
-              }
+          "id" => "place_123",
+          "formattedAddress" => "Moema, São Paulo - SP, Brasil",
+          "addressComponents" => [
+            %{
+              "longText" => "Moema",
+              "shortText" => "Moema",
+              "types" => ["sublocality_level_1", "sublocality", "political"]
+            },
+            %{
+              "longText" => "São Paulo",
+              "shortText" => "São Paulo",
+              "types" => ["administrative_area_level_2", "political"]
+            },
+            %{
+              "longText" => "São Paulo",
+              "shortText" => "SP",
+              "types" => ["administrative_area_level_1", "political"]
+            },
+            %{
+              "longText" => "Brasil",
+              "shortText" => "BR",
+              "types" => ["country", "political"]
             }
+          ],
+          "location" => %{
+            "latitude" => -23.6033,
+            "longitude" => -46.6631
           }
         }
 

@@ -14,6 +14,7 @@ defmodule Kfofo.Scrapers.Olx do
     * `:state` - State acronym, e.g. "sp", "rj" (optional)
     * `:region` - Region slug, e.g. "sao-paulo-e-regiao" (optional)
     * `:city` - City slug, e.g. "sao-paulo" (optional)
+    * `:neighborhood` - Neighborhood name or slug, e.g. "moema" (optional)
     * `:type` - Transaction type: `:venda` or `:aluguel` (default: `:venda`)
     * `:category` - Property category, e.g. "imoveis" (default: "imoveis")
     * `:min_price` - Minimum price integer (optional)
