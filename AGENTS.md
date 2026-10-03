@@ -9,12 +9,11 @@ Este documento estabelece as regras de engajamento, boas práticas e restriçõe
 1. **NUNCA fazer Commit:** A IA **não** deve executar `git commit`. A criação e finalização de commits fica a cargo exclusivo do desenvolvedor humano.
 2. **NUNCA fazer Push:** A IA **não** deve executar `git push` para qualquer repositório remoto.
 3. **Resumo de Pull Request Obrigatório:**
-   - Sempre que concluir as tarefas em uma *feature branch*, a IA deve criar um arquivo Markdown (ex: `PR_SUMMARY.md` na raiz ou em um diretório temporário) contendo:
-     - **Resumo das Alterações**: Visão geral de alto nível do que foi implementado/corrigido.
-     - **Lista de Modificações**: Arquivos criados, alterados ou removidos.
-     - **Como Testar**: Passos claros para validar as mudanças.
-     - **Checklist de Qualidade**: Confirmação de testes executados (`mix test`), formatação (`mix format`), etc.
-   - Este arquivo servirá para o desenvolvedor copiar e colar diretamente na descrição do Pull Request no GitHub/GitLab.
+   - Sempre que concluir as tarefas em uma *feature branch*, a IA deve criar um arquivo Markdown (`PR_SUMMARY.md` na raiz) contendo:
+     - **Resumo das Alterações**: Visão geral direta e sucinta do que foi implementado/corrigido.
+     - **Como Testar**: Comandos diretos para validação (`mix test`, `mix format`, etc.).
+     - **Checklist de Qualidade**: Confirmação dos critérios de aceitação básicos.
+   - Este arquivo servirá para o desenvolvedor copiar e colar na descrição do Pull Request no GitHub.
 
 ---
 
@@ -47,4 +46,4 @@ Este documento estabelece as regras de engajamento, boas práticas e restriçõe
 
 1. **Investigar antes de alterar**: Inspecionar os contextos e arquivos existentes antes de propor edições.
 2. **Executar Validações**: Rodar `mix test` e verificar compilação (`mix compile --warnings-as-errors`) sempre que criar/modificar código Elixir.
-3. **Gerar Documentação de PR**: Criar a documentação no final da tarefa conforme a regra de Git acima.
+3. **Gerar Documentação de PR**: Criar/atualizar `PR_SUMMARY.md` no final de cada tarefa.
