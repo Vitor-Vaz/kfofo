@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "got-scraping": "^4.2.1"
+  }
+}
