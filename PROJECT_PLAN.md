@@ -4,7 +4,7 @@
 
 ## 🎯 Visão Geral do Projeto
 
-O **kfofo** é um agregador inteligente de anúncios de imóveis (casas e apartamentos para aluguel, compra e financiamento). O objetivo principal é consolidar em uma única interface reativa anúncios vindos dos maiores marketplaces imobiliários do Brasil, facilitando a busca do usuário e otimizando a experiência de encontrar o imóvel ideal sem duplicar esforços.
+O **kfofo** é um agregador inteligente de anúncios de imóveis (casas e apartamentos para aluguel, compra e financiamento). O objetivo principal é consolidar em uma única interface anúncios vindos dos maiores marketplaces imobiliários do Brasil, facilitando a busca do usuário e otimizando a experiência de encontrar o imóvel ideal sem duplicar esforços e sem necessidade de sair da plataforma para visualizar os detalhes.
 
 ---
 
@@ -13,40 +13,52 @@ O **kfofo** é um agregador inteligente de anúncios de imóveis (casas e aparta
 - **Abordagem**: Monolito Reativo com Phoenix LiveView.
 - **Backend & Frontend**: Elixir + Phoenix Framework com LiveView (sem a necessidade de SPA separado em JS framework, garantindo menor complexidade de infraestrutura, baixa latência e alta concorrência com a BEAM).
 - **Banco de Dados**: PostgreSQL com Ecto ORM.
-- **Integrações de Dados (Scrapers/APIs)**: Módulos isolados em Elixir responsáveis pela busca e normalização dos dados vindos das plataformas externas.
+- **Integrações de Dados (Scrapers/APIs)**: Módulos isolados em Elixir responsáveis pela busca e normalização dos dados vindos das plataformas externas (contando com runtime Node.js/got-scraping para bypass de TLS/anti-bot quando necessário).
 
 ---
 
 ## 🗺️ Roadmap de Integração de Marketplaces
 
-1. **Fase 1 (Inicial)**: 🟢 **OLX** (Base inicial de testes e validação de scraping/API).
+1. **Fase 1 (Inicial)**: 🟢 **OLX** (Conector funcional e extração ativa).
 2. **Fase 2**: 🟡 **Zap Imóveis**.
 3. **Fase 3**: 🟠 **QuintoAndar**.
 4. **Fase 4**: 🔴 **Imovelweb**.
 
 ---
 
-## 💡 Funcionalidades Mapeadas
+## 💡 Funcionalidades Mapeadas & Novas Demandas
 
-### 1. Barra de Pesquisa Agregada
-- Barra de pesquisa unificada no topo do site para busca por cidade, bairro, tipo de imóvel ou palavra-chave.
-- Consulta simultânea nos conectores dos marketplaces agregados.
+### 1. Barra de Busca Inteligente de Localização (Autocomplete)
+- Substituir campos manuais isolados de "Estado" e "Cidade" por um campo de busca integrado com sugestões preditivas.
+- Integração com Google Places / Google Maps (ou base estruturada de geolocalização) para autocompletar e sugerir bairros, cidades e estados enquanto o usuário digita.
 
-### 2. Filtros de Pesquisa Unificados
-- Filtros abrangentes (faixa de preço, número de quartos/banheiros, vagas de garagem, tipo de contrato: aluguel, compra, financiamento).
-- Normalização dos filtros para que funcionem de forma transparente em todos os marketplaces suportados.
+### 2. Cards com Mini-Carrossel de Imagens
+- Correção na extração e renderização das imagens dos imóveis nos cards da listagem.
+- Mini-carrossel interativo diretamente dentro do card (com setas de navegação anterior/próxima e indicadores de posição), reproduzindo a experiência visual intuitiva das principais plataformas.
 
-### 3. Salvamento de Pesquisas e Filtros
+### 3. Página Interna de Detalhes do Imóvel
+- Página interna dedicada no Kfofo (`/properties/:id`) para exibição completa do imóvel, sem redirecionar o usuário para o site de origem.
+- Exibição de galeria completa de fotos em alta resolução, descrição detalhada, localização no mapa, tabela de especificações (área, quartos, banheiros, vagas, condomínio, IPTU) e identificação da fonte de origem.
+
+### 4. Identidade Visual da Marca Kfofo (Branding & UI)
+- Inclusão do logotipo e marca oficial do **Kfofo** no cabeçalho e na identidade visual geral.
+- Remoção de qualquer terminologia técnica interna da interface do usuário (ex: referências a "LiveView", "extração SSR", "Scraper", etc.), mantendo a comunicação totalmente voltada para o usuário final que busca um lar.
+
+### 5. Filtros de Pesquisa Unificados
+- Filtros abrangentes (faixa de preço, número de quartos/banheiros, vagas de garagem, tipo: aluguel ou venda).
+- Normalização transparente dos filtros para os marketplaces suportados.
+
+### 6. Salvamento de Pesquisas e Filtros
 - Permite ao usuário salvar conjuntos de filtros pré-definidos (ex: *"Aluguel em Moema até R$ 3.500 com 2 vagas"*).
 - Evita que o usuário precise reconfigurar os filtros a cada nova visita ao site.
 
-### 4. Destaque de Visualizações ("Nunca Visualizadas" vs "Já Visualizadas")
+### 7. Destaque de Visualizações ("Nunca Visualizadas" vs "Já Visualizadas")
 - Mecanismo visual para diferenciar imóveis inéditos daqueles que o usuário já abriu/visualizou.
 - Filtro dedicado para exibir apenas imóveis não visualizados, facilitando as primeiras sessões de busca e destacando novas oportunidades.
 
-### 5. Sistema de Notificação de Novos Anúncios
+### 8. Sistema de Notificação de Novos Anúncios
 - Monitoramento em tempo real/periódico de buscas salvas.
-- Envio de alertas/notificações quando uma nova casa alinhada aos filtros salvos for publicada em qualquer um dos marketplaces agregados.
+- Envio de alertas/notificações quando um novo imóvel alinhado aos filtros salvos for publicado.
 
 ### 6. Sistema de Autenticação (Google Login)
 - Login social com Google OAuth2 (será implementado futuramente).
@@ -54,37 +66,26 @@ O **kfofo** é um agregador inteligente de anúncios de imóveis (casas e aparta
 
 ---
 
-## 🗄️ Modelagem de Banco de Dados
-
-### Fase Inicial
-- **Tabela `filters`**: Armazena as pesquisas e filtros configurados (parâmetros de busca, valores mínimos/máximos, localização, tipo de contrato).
-- **Tabela `property_views` / cookie local**: Registro do histórico de imóveis visualizados.
-
-### Fase Futura
-- **Tabela `users`**: Armazena dados do usuário (Google ID, e-mail, nome, preferências de notificação).
-- **Relacionamento**: `users` -> `filters` (1 para N).
-
----
-
-## 📍 Status Atual do Desenvolvimento (Onde Estamos)
+## 📍 Status Atual do Desenvolvimento
 
 | Etapa | Descrição | Status |
 | :--- | :--- | :---: |
-| **Fase 0** | Definição de Escopo, Arquitetura e Regras da IA (`AGENTS.md`, `PROJECT_PLAN.md`) | 🟢 **Concluído** |
-| **Fase 1.1** | Setup do Projeto Elixir + Phoenix LiveView (`mix phx.new`) | ⏳ *Próximo Passo* |
-| **Fase 1.2** | Configuração do PostgreSQL e Banco de Dados | ⏳ *A Seguir* |
-| **Fase 1.3** | Criação do Contexto `Kfofo.Filters` e tabela `filters` | ⏳ *A Seguir* |
-| **Fase 1.4** | Construção da LiveView com Barra de Pesquisa e Filtros | ⏳ *Planejado* |
-| **Fase 1.5** | Conector / Scraper Inicial da OLX | ⏳ *Planejado* |
-| **Fase 1.6** | Controle de Imóveis "Visualizados vs Nunca Visualizados" | ⏳ *Planejado* |
-| **Fase 2.0** | Integrações Zap Imóveis, QuintoAndar, Imovelweb | ⏳ *Futuro* |
-| **Fase 3.0** | Sistema de Notificações e Login com Google | ⏳ *Futuro* |
+| **Setup Base** | Setup do Projeto Elixir + Phoenix LiveView + Tailwind | 🟢 **Concluído** |
+| **Scraper OLX** | Conector OLX com bypass TLS (Node/got-scraping) e parser SSR Floki | 🟢 **Concluído** |
+| **Listagem Inicial** | Página LiveView inicial com busca e exibição em grid | 🟢 **Concluído** |
+| **Identidade Kfofo** | Aplicação da marca Kfofo, logotipo e limpeza de termos técnicos na UI | ⏳ *Próximo Passo* |
+| **Carrossel de Cards** | Correção de imagens e mini-carrossel interativo no card | ⏳ *Próximo Passo* |
+| **Busca de Local** | Autocomplete preditivo de Estado, Cidade e Bairro (Google Maps / Places) | ⏳ *Em Planejamento* |
+| **Página de Detalhes**| Página interna de anúncio com galeria completa e ficha do imóvel | ⏳ *Em Planejamento* |
+| **Banco & Filtros** | Persistência PostgreSQL com Ecto e salvamento de buscas | ⏳ *A Seguir* |
+| **Novos Portais** | Integrações com Zap Imóveis, QuintoAndar e Imovelweb | ⏳ *Fase 2* |
+| **Notificações & Auth**| Login social com Google e alertas de novos imóveis | ⏳ *Fase 3* |
 
 ---
 
 ## 🚀 Próximos Passos Imediatos
 
-1. Inicializar o projeto Phoenix LiveView na pasta do repositório (`mix phx.new . --live`).
-2. Configurar a conexão com o PostgreSQL em `config/dev.exs`.
-3. Criar a migração Ecto e o contexto `Kfofo.Filters` para a tabela `filters`.
-4. Desenvolver o componente LiveView da Barra de Pesquisa e Painel de Filtros.
+1. **Branding Kfofo & Limpeza de UI**: Inserir logo Kfofo e remover referências técnicas da página inicial.
+2. **Correção de Imagens & Mini-Carrossel**: Garantir exibição correta das imagens e criar o mini-carrossel no card.
+3. **Página de Detalhes do Imóvel**: Desenvolver a visualização interna do anúncio dentro do Kfofo.
+4. **Autocomplete de Localização**: Desenvolver a caixa de busca preditiva de localização integrada (Google Maps/Places).

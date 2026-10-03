@@ -1,13 +1,16 @@
 defmodule KfofoWeb.PropertyLive.Index do
   use KfofoWeb, :live_view
 
+  alias Kfofo.Locations
   alias Kfofo.Scrapers.Olx
 
   @impl true
   def mount(_params, _session, socket) do
     search_form = %{
+      "location_query" => "São Paulo, SP",
       "state" => "sp",
       "city" => "sao-paulo",
+      "neighborhood" => "",
       "type" => "venda",
       "min_price" => "",
       "max_price" => "",
@@ -16,8 +19,10 @@ defmodule KfofoWeb.PropertyLive.Index do
 
     socket =
       socket
-      |> assign(:page_title, "Busca de Imóveis - Kfofo")
+      |> assign(:page_title, "Kfofo - O seu novo lar")
       |> assign(:search_form, search_form)
+      |> assign(:location_predictions, [])
+      |> assign(:show_predictions, false)
       |> assign(:loading, false)
       |> assign(:properties, [])
       |> assign(:total, 0)
@@ -28,14 +33,82 @@ defmodule KfofoWeb.PropertyLive.Index do
   end
 
   @impl true
+  def handle_event("suggest_locations", %{"value" => query}, socket) do
+    socket =
+      case String.length(String.trim(query)) do
+        len when len >= 2 ->
+          case Locations.search_locations(query) do
+            {:ok, predictions} ->
+              socket
+              |> assign(:location_predictions, predictions)
+              |> assign(:show_predictions, predictions != [])
+
+            _ ->
+              socket
+              |> assign(:location_predictions, [])
+              |> assign(:show_predictions, false)
+          end
+
+        _ ->
+          socket
+          |> assign(:location_predictions, [])
+          |> assign(:show_predictions, false)
+      end
+
+    updated_form = Map.put(socket.assigns.search_form, "location_query", query)
+    {:noreply, assign(socket, :search_form, updated_form)}
+  end
+
+  @impl true
+  def handle_event(
+        "select_location",
+        %{"place-id" => place_id, "description" => description},
+        socket
+      ) do
+    socket =
+      case Locations.get_location_details(place_id) do
+        {:ok, details} ->
+          updated_form =
+            socket.assigns.search_form
+            |> Map.put("location_query", details.formatted_address || description)
+            |> maybe_put_field("state", details.state)
+            |> maybe_put_field("city", details.city)
+            |> Map.put("neighborhood", details.neighborhood || "")
+
+          socket
+          |> assign(:search_form, updated_form)
+          |> assign(:location_predictions, [])
+          |> assign(:show_predictions, false)
+
+        _ ->
+          updated_form = Map.put(socket.assigns.search_form, "location_query", description)
+
+          socket
+          |> assign(:search_form, updated_form)
+          |> assign(:location_predictions, [])
+          |> assign(:show_predictions, false)
+      end
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("close_predictions", _params, socket) do
+    {:noreply, assign(socket, :show_predictions, false)}
+  end
+
+  @impl true
   def handle_event("search", %{"search" => params}, socket) do
+    merged_params = Map.merge(socket.assigns.search_form, params)
+
     socket =
       socket
-      |> assign(:search_form, params)
+      |> assign(:search_form, merged_params)
       |> assign(:loading, true)
       |> assign(:searched, true)
       |> assign(:error_message, nil)
-      |> start_async_fetch(params)
+      |> assign(:show_predictions, false)
+      |> start_async_fetch(merged_params)
 
     {:noreply, socket}
   end
@@ -151,4 +224,8 @@ defmodule KfofoWeb.PropertyLive.Index do
   def first_image(_),
     do:
       "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&auto=format&fit=crop&q=80"
+
+  defp maybe_put_field(map, _key, nil), do: map
+  defp maybe_put_field(map, _key, ""), do: map
+  defp maybe_put_field(map, key, val), do: Map.put(map, key, val)
 end

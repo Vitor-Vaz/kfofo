@@ -25,3 +25,5 @@ config :phoenix_live_view,
   enable_expensive_runtime_checks: true
 
 config :kfofo, :olx_scraper, base_url: "https://dummy-olx.test"
+
+config :kfofo, :google_maps, api_key: "dummy_test_key"

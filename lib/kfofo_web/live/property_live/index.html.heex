@@ -1,52 +1,92 @@
 <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-  <div class="mb-8 rounded-2xl bg-gradient-to-r from-zinc-900 via-zinc-800 to-indigo-950 p-6 md:p-8 text-white shadow-xl">
-    <div class="flex items-center gap-3 mb-2">
-      <span class="inline-flex items-center rounded-md bg-indigo-500/20 px-2.5 py-1 text-xs font-semibold text-indigo-300 ring-1 ring-inset ring-indigo-500/30">
-        Agregador Imobiliário
-      </span>
-      <span class="inline-flex items-center rounded-md bg-orange-500/20 px-2.5 py-1 text-xs font-semibold text-orange-300 ring-1 ring-inset ring-orange-500/30">
-        Scraper OLX
-      </span>
+  <div class="mb-8 rounded-2xl bg-gradient-to-r from-zinc-950 via-zinc-900 to-indigo-950 p-6 md:p-8 text-white shadow-xl border border-zinc-800/80">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-lg shadow-orange-500/25">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="w-6 h-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+          />
+        </svg>
+      </div>
+      <div>
+        <span class="text-2xl font-black tracking-tight text-white flex items-center gap-1">
+          Kfofo<span class="text-orange-400 text-3xl leading-none">.</span>
+        </span>
+        <p class="text-[11px] font-medium text-zinc-400">O seu agregador inteligente de lares</p>
+      </div>
     </div>
-    <h1 class="text-3xl font-extrabold tracking-tight sm:text-4xl">
-      Buscar Imóveis na OLX
+
+    <h1 class="text-3xl font-extrabold tracking-tight sm:text-4xl text-white">
+      Encontre o seu cantinho ideal
     </h1>
     <p class="mt-2 max-w-2xl text-sm text-zinc-300">
-      Filtre e extraia anúncios em tempo real diretamente da OLX via extração SSR de alta performance.
+      Pesquise e compare imóveis para morar ou investir nos principais portais do Brasil em uma única experiência.
     </p>
 
     <form phx-submit="search" class="mt-6">
+      <input type="hidden" name="search[state]" value={@search_form["state"]} />
+      <input type="hidden" name="search[city]" value={@search_form["city"]} />
+      <input type="hidden" name="search[neighborhood]" value={@search_form["neighborhood"]} />
+
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
-        <div>
-          <label class="block text-xs font-medium text-zinc-300 mb-1">Estado (UF)</label>
-          <input
-            type="text"
-            name="search[state]"
-            value={@search_form["state"]}
-            placeholder="sp, rj, mg..."
-            class="w-full rounded-lg bg-zinc-800/80 border border-zinc-700 text-white placeholder-zinc-500 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"
-          />
+        <div class="relative sm:col-span-2 lg:col-span-3">
+          <label class="block text-xs font-medium text-zinc-300 mb-1">
+            Localização (Bairro, Cidade ou Estado)
+          </label>
+          <div class="relative">
+            <input
+              type="text"
+              name="search[location_query]"
+              value={@search_form["location_query"]}
+              phx-keyup="suggest_locations"
+              phx-debounce="300"
+              autocomplete="off"
+              placeholder="Digite um bairro ou cidade (ex: Moema, São Paulo)..."
+              class="w-full rounded-lg bg-zinc-800/80 border border-zinc-700 text-white placeholder-zinc-500 pl-9 pr-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+            />
+            <span class="absolute left-3 top-2 text-zinc-400 text-sm">📍</span>
+          </div>
+
+          <%= if @show_predictions && @location_predictions != [] do %>
+            <div class="absolute z-50 left-0 right-0 mt-1 rounded-xl bg-zinc-900 border border-zinc-700 shadow-2xl overflow-hidden divide-y divide-zinc-800 max-h-60 overflow-y-auto">
+              <%= for pred <- @location_predictions do %>
+                <button
+                  type="button"
+                  phx-click="select_location"
+                  phx-value-place-id={pred.place_id}
+                  phx-value-description={pred.description}
+                  class="w-full text-left px-4 py-2.5 text-xs text-zinc-200 hover:bg-indigo-600/30 hover:text-white flex items-center gap-2.5 transition"
+                >
+                  <span class="text-zinc-500">📍</span>
+                  <div>
+                    <div class="font-semibold text-white">{pred.main_text}</div>
+                    <div class="text-[11px] text-zinc-400">{pred.secondary_text}</div>
+                  </div>
+                </button>
+              <% end %>
+            </div>
+          <% end %>
         </div>
 
         <div>
-          <label class="block text-xs font-medium text-zinc-300 mb-1">Cidade (Slug)</label>
-          <input
-            type="text"
-            name="search[city]"
-            value={@search_form["city"]}
-            placeholder="sao-paulo, campinas..."
-            class="w-full rounded-lg bg-zinc-800/80 border border-zinc-700 text-white placeholder-zinc-500 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"
-          />
-        </div>
-
-        <div>
-          <label class="block text-xs font-medium text-zinc-300 mb-1">Tipo</label>
+          <label class="block text-xs font-medium text-zinc-300 mb-1">Tipo de Negócio</label>
           <select
             name="search[type]"
             class="w-full rounded-lg bg-zinc-800/80 border border-zinc-700 text-white px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"
           >
-            <option value="venda" selected={@search_form["type"] == "venda"}>Venda</option>
-            <option value="aluguel" selected={@search_form["type"] == "aluguel"}>Aluguel</option>
+            <option value="venda" selected={@search_form["type"] == "venda"}>
+              Comprar (Venda)
+            </option>
+            <option value="aluguel" selected={@search_form["type"] == "aluguel"}>Alugar</option>
           </select>
         </div>
 
@@ -72,8 +112,8 @@
           />
         </div>
 
-        <div>
-          <label class="block text-xs font-medium text-zinc-300 mb-1">Mín. Quartos</label>
+        <div class="sm:col-span-2 lg:col-span-2">
+          <label class="block text-xs font-medium text-zinc-300 mb-1">Mínimo de Quartos</label>
           <input
             type="number"
             name="search[bedrooms]"
@@ -88,7 +128,7 @@
         <button
           type="submit"
           disabled={@loading}
-          class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg hover:bg-indigo-500 transition disabled:opacity-50"
+          class="inline-flex items-center gap-2 rounded-xl bg-orange-600 hover:bg-orange-500 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-orange-600/25 transition disabled:opacity-50"
         >
           <%= if @loading do %>
             <svg
@@ -115,7 +155,7 @@
             </svg>
             Buscando Imóveis...
           <% else %>
-            🔍 Buscar na OLX
+            🔍 Buscar Imóveis
           <% end %>
         </button>
       </div>
