@@ -1,0 +1,36 @@
+defmodule Kfofo.Application do
+  # See https://hexdocs.pm/elixir/Application.html
+  # for more information on OTP Applications
+  @moduledoc false
+
+  use Application
+
+  @impl true
+  def start(_type, _args) do
+    children = [
+      KfofoWeb.Telemetry,
+      Kfofo.Repo,
+      {DNSCluster, query: Application.get_env(:kfofo, :dns_cluster_query) || :ignore},
+      {Phoenix.PubSub, name: Kfofo.PubSub},
+      # Start the Finch HTTP client for sending emails
+      {Finch, name: Kfofo.Finch},
+      # Start a worker by calling: Kfofo.Worker.start_link(arg)
+      # {Kfofo.Worker, arg},
+      # Start to serve requests, typically the last entry
+      KfofoWeb.Endpoint
+    ]
+
+    # See https://hexdocs.pm/elixir/Supervisor.html
+    # for other strategies and supported options
+    opts = [strategy: :one_for_one, name: Kfofo.Supervisor]
+    Supervisor.start_link(children, opts)
+  end
+
+  # Tell Phoenix to update the endpoint configuration
+  # whenever the application is updated.
+  @impl true
+  def config_change(changed, _new, removed) do
+    KfofoWeb.Endpoint.config_change(changed, removed)
+    :ok
+  end
+end
