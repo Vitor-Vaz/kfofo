@@ -5,6 +5,99 @@ defmodule Kfofo.Scrapers.Olx.Parser do
   """
 
   @doc """
+  Attempts to parse properties from HTML cards first, falling back to JSON script tag.
+  """
+  def parse_page(html) when is_binary(html) do
+    case parse_html_cards(html) do
+      {:ok, result} ->
+        {:ok, result}
+
+      {:error, _} ->
+        with {:ok, json} <- extract_next_data(html),
+             {:ok, result} <- parse_next_data(json) do
+          {:ok, result}
+        end
+    end
+  end
+
+  @doc """
+  Parses HTML document containing `.olx-adcard` sections.
+  """
+  def parse_html_cards(html) when is_binary(html) do
+    with {:ok, doc} <- Floki.parse_document(html),
+         cards when cards != [] <- Floki.find(doc, "section.olx-adcard") do
+      properties = Enum.map(cards, &normalize_card/1)
+
+      {:ok,
+       %{
+         properties: properties,
+         total: length(properties),
+         page: 1,
+         page_size: length(properties)
+       }}
+    else
+      [] -> {:error, :no_cards_found}
+      {:error, reason} -> {:error, {:parse_error, reason}}
+      _ -> {:error, :no_cards_found}
+    end
+  end
+
+  @doc """
+  Normalizes a single `.olx-adcard` HTML node into a standard Property map.
+  """
+  def normalize_card(card) do
+    link =
+      card
+      |> Floki.find("a[data-testid=\"adcard-link\"]")
+      |> Floki.attribute("href")
+      |> List.first()
+      |> Kernel.||("")
+
+    title =
+      card
+      |> Floki.find(".olx-adcard__title")
+      |> Floki.text()
+      |> String.trim()
+
+    price_raw =
+      card
+      |> Floki.find(".olx-adcard__price")
+      |> Floki.text()
+      |> String.trim()
+
+    location_raw =
+      card
+      |> Floki.find(".olx-adcard__location")
+      |> Floki.text()
+      |> String.trim()
+
+    image =
+      card
+      |> Floki.find("picture img")
+      |> Floki.attribute("src")
+      |> List.first()
+
+    date =
+      card
+      |> Floki.find(".olx-adcard__date")
+      |> Floki.text()
+      |> String.trim()
+
+    %{
+      external_id: extract_id_from_url(link),
+      title: title,
+      price: parse_price(price_raw),
+      url: link,
+      source: "olx",
+      description: "",
+      location: parse_location_string(location_raw),
+      details: parse_card_details(card),
+      images: extract_card_images(image),
+      published_at: date
+    }
+  end
+
+  @doc """
   Parses HTML string and extracts the `__NEXT_DATA__` JSON payload.
   """
   def extract_next_data(html) when is_binary(html) do
@@ -158,4 +251,52 @@ defmodule Kfofo.Scrapers.Olx.Parser do
   end
 
   defp extract_images(_), do: []
+
+  defp parse_location_string(str) when is_binary(str) do
+    case str |> String.split(",") |> Enum.map(&String.trim/1) do
+      [city, neighborhood | _] ->
+        %{city: city, neighborhood: neighborhood, state: nil, zipcode: nil}
+
+      [city] ->
+        %{city: city, neighborhood: nil, state: nil, zipcode: nil}
+
+      _ ->
+        %{city: nil, neighborhood: nil, state: nil, zipcode: nil}
+    end
+  end
+
+  defp parse_card_details(card) do
+    card
+    |> Floki.find(".olx-adcard__detail")
+    |> Enum.reduce(%{area_sqm: nil, bedrooms: nil, bathrooms: nil, garage_spaces: nil}, fn node,
+                                                                                           acc ->
+      aria = Floki.attribute(node, "aria-label") |> List.first() |> Kernel.||("")
+      text = Floki.text(node) |> String.trim()
+      num = parse_int(text)
+
+      assign_detail(acc, aria, num)
+    end)
+  end
+
+  defp assign_detail(acc, aria, num) do
+    cond do
+      String.contains?(aria, "metros quadrados") -> %{acc | area_sqm: num}
+      String.contains?(aria, "quarto") -> %{acc | bedrooms: num}
+      String.contains?(aria, "banheiro") -> %{acc | bathrooms: num}
+      String.contains?(aria, "vaga") -> %{acc | garage_spaces: num}
+      true -> acc
+    end
+  end
+
+  defp extract_card_images(nil), do: []
+  defp extract_card_images(url) when is_binary(url), do: [url]
+
+  defp extract_id_from_url(url) when is_binary(url) do
+    case Regex.run(~r/-(\d{7,})$/, url) do
+      [_, id] -> id
+      _ -> ""
+    end
+  end
+
+  defp extract_id_from_url(_), do: ""
 end

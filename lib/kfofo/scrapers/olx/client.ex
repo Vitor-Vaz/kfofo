@@ -49,15 +49,23 @@ defmodule Kfofo.Scrapers.Olx.Client do
   end
 
   defp default_fetch(url, headers) do
-    case Req.get(url, headers: headers, retry: :safe_transient) do
-      {:ok, %Req.Response{status: 200, body: body}} ->
+    script_path = Path.join(:code.priv_dir(:kfofo), "scrapers/fetch_olx.mjs")
+
+    case System.cmd("node", [script_path, url], stderr_to_stdout: false) do
+      {body, 0} when is_binary(body) and byte_size(body) > 0 ->
         {:ok, body}
 
-      {:ok, %Req.Response{status: status}} ->
-        {:error, {:http_error, status}}
+      _ ->
+        case Req.get(url, headers: headers, retry: :safe_transient) do
+          {:ok, %Req.Response{status: 200, body: body}} ->
+            {:ok, body}
 
-      {:error, reason} ->
-        {:error, {:network_error, reason}}
+          {:ok, %Req.Response{status: status}} ->
+            {:error, {:http_error, status}}
+
+          {:error, reason} ->
+            {:error, {:network_error, reason}}
+        end
     end
   end
 
@@ -65,9 +73,17 @@ defmodule Kfofo.Scrapers.Olx.Client do
     [
       {"user-agent", @default_user_agent},
       {"accept",
-       "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"},
+       "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8"},
       {"accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7"},
-      {"cache-control", "no-cache"}
+      {"sec-ch-ua",
+       "\"Google Chrome\";v=\"123\", \"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"123\""},
+      {"sec-ch-ua-mobile", "?0"},
+      {"sec-ch-ua-platform", "\"Linux\""},
+      {"sec-fetch-dest", "document"},
+      {"sec-fetch-mode", "navigate"},
+      {"sec-fetch-site", "none"},
+      {"sec-fetch-user", "?1"},
+      {"upgrade-insecure-requests", "1"}
     ]
   end
 

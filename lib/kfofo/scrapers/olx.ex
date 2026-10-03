@@ -29,15 +29,16 @@ defmodule Kfofo.Scrapers.Olx do
 
   """
   def fetch_properties(opts \\ %{}) do
-    with {:ok, html} <- Client.fetch_search_page(opts),
-         {:ok, json} <- Parser.extract_next_data(html),
-         {:ok, result} <- Parser.parse_next_data(json) do
-      {:ok, result}
+    with {:ok, html} <- Client.fetch_search_page(opts) do
+      Parser.parse_page(html)
     end
   end
 
   defdelegate build_url(opts \\ %{}), to: Client
+  defdelegate parse_page(html), to: Parser
+  defdelegate parse_html_cards(html), to: Parser
   defdelegate extract_next_data(html), to: Parser
   defdelegate parse_next_data(json), to: Parser
   defdelegate normalize_ad(ad), to: Parser
+  defdelegate normalize_card(card), to: Parser
 end

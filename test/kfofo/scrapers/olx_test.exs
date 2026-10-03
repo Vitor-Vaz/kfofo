@@ -150,6 +150,47 @@ defmodule Kfofo.Scrapers.OlxTest do
       assert property.price == 1_200_000
     end
 
+    test "fetches and parses properties from SSR HTML cards" do
+      mock_html = """
+      <div class="adListContainer">
+        <section class="olx-adcard">
+          <a data-testid="adcard-link" class="olx-adcard__link" title="Casa no Jardins" href="https://dummy-olx.test/imoveis/casa-no-jardins-1234567">
+            <h2 class="olx-adcard__title">Casa no Jardins</h2>
+          </a>
+          <h3 class="olx-adcard__price">R$ 850.000</h3>
+          <p class="olx-adcard__location">São Paulo, Jardins</p>
+          <div class="olx-adcard__detail" aria-label="3 quartos">3</div>
+          <div class="olx-adcard__detail" aria-label="2 banheiros">2</div>
+          <div class="olx-adcard__detail" aria-label="2 vagas de garagem">2</div>
+          <div class="olx-adcard__detail" aria-label="120 metros quadrados">120m²</div>
+          <div class="olx-adcard__media">
+            <picture><img src="https://dummy-img.test/casa.webp" alt="Casa" /></picture>
+          </div>
+          <p class="olx-adcard__date">Hoje, 10:00</p>
+        </section>
+      </div>
+      """
+
+      mock_client = fn _url, _headers ->
+        {:ok, %{status: 200, body: mock_html}}
+      end
+
+      assert {:ok, result} = Olx.fetch_properties(%{state: "sp", http_client: mock_client})
+      assert result.total == 1
+      assert [property] = result.properties
+      assert property.external_id == "1234567"
+      assert property.title == "Casa no Jardins"
+      assert property.price == 850_000
+      assert property.location.city == "São Paulo"
+      assert property.location.neighborhood == "Jardins"
+      assert property.details.bedrooms == 3
+      assert property.details.bathrooms == 2
+      assert property.details.garage_spaces == 2
+      assert property.details.area_sqm == 120
+      assert property.images == ["https://dummy-img.test/casa.webp"]
+      assert property.published_at == "Hoje, 10:00"
+    end
+
     test "handles HTTP failure status gracefully" do
       mock_client = fn _url, _headers ->
         {:ok, %{status: 403, body: "Forbidden"}}
