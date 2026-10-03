@@ -40,6 +40,12 @@ Este documento estabelece as regras de engajamento, boas práticas e restriçõe
 3. **Formatação & Qualidade**:
    - Sempre rodar `mix format` antes de considerar uma alteração pronta.
    - Escrever testes unitários e de integração (`mix test`) para contextos e LiveViews.
+4. **Programação Funcional Idiomática (Evitar `if`)**:
+   - Evitar o uso de estruturas `if` imperativas.
+   - Dar preferência a Pattern Matching em cabeçalhos de função, `case`, `with`, Guard Clauses (`when`) ou funções utilitárias (`Enum`, `Map`, `String`).
+5. **Comentários de Código**:
+   - Evitar comentários óbvios, redundantes ou divisores de seção (ex: `# Private Helpers`, `# Helpers`).
+   - Manter o código limpo e autoexplicativo, utilizando `@doc` e `@moduledoc` apenas onde agrega valor real.
 
 ---
 
