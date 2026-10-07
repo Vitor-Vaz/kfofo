@@ -14,6 +14,7 @@ defmodule Kfofo.Scrapers.Olx do
     * `:state` - State acronym, e.g. "sp", "rj" (optional)
     * `:region` - Region slug, e.g. "sao-paulo-e-regiao" (optional)
     * `:city` - City slug, e.g. "sao-paulo" (optional)
+    * `:neighborhood` - Neighborhood name or slug, e.g. "moema" (optional)
     * `:type` - Transaction type: `:venda` or `:aluguel` (default: `:venda`)
     * `:category` - Property category, e.g. "imoveis" (default: "imoveis")
     * `:min_price` - Minimum price integer (optional)
@@ -41,4 +42,6 @@ defmodule Kfofo.Scrapers.Olx do
   defdelegate parse_next_data(json), to: Parser
   defdelegate normalize_ad(ad), to: Parser
   defdelegate normalize_card(card), to: Parser
+  defdelegate normalize_card(card, images_map), to: Parser
+  defdelegate extract_rsc_images_map(html), to: Parser
 end
