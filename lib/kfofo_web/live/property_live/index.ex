@@ -286,11 +286,35 @@ defmodule KfofoWeb.PropertyLive.Index do
 
   def format_price(_), do: "Sob Consulta"
 
-  def first_image(images) when is_list(images) and images != [] do
-    List.first(images)
+  def first_image([first | _]) when is_binary(first) do
+    case String.trim(first) do
+      "" ->
+        fallback_image()
+
+      url ->
+        url
+    end
   end
 
-  def first_image(_),
+  def first_image(_), do: fallback_image()
+
+  def property_images(images) when is_list(images) and images != [] do
+    cleaned =
+      Enum.reject(images, fn
+        img when is_binary(img) -> String.trim(img) == ""
+        nil -> true
+        _ -> false
+      end)
+
+    case cleaned do
+      [] -> [fallback_image()]
+      list -> Enum.take(list, 10)
+    end
+  end
+
+  def property_images(_), do: [fallback_image()]
+
+  def fallback_image,
     do:
       "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&auto=format&fit=crop&q=80"
 

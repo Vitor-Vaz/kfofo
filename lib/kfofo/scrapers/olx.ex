@@ -42,4 +42,6 @@ defmodule Kfofo.Scrapers.Olx do
   defdelegate parse_next_data(json), to: Parser
   defdelegate normalize_ad(ad), to: Parser
   defdelegate normalize_card(card), to: Parser
+  defdelegate normalize_card(card, images_map), to: Parser
+  defdelegate extract_rsc_images_map(html), to: Parser
 end

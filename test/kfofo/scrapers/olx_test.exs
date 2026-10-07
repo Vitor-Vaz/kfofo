@@ -197,6 +197,37 @@ defmodule Kfofo.Scrapers.OlxTest do
       assert property.published_at == "Hoje, 10:00"
     end
 
+    test "fetches and parses properties with RSC gallery images map" do
+      mock_html = """
+      <div class="adListContainer">
+        <section class="olx-adcard">
+          <a data-testid="adcard-link" class="olx-adcard__link" title="Casa no Jardins" href="https://dummy-olx.test/imoveis/casa-no-jardins-1234567">
+            <h2 class="olx-adcard__title">Casa no Jardins</h2>
+          </a>
+          <h3 class="olx-adcard__price">R$ 850.000</h3>
+          <p class="olx-adcard__location">São Paulo, Jardins</p>
+          <div class="olx-adcard__media">
+            <picture><img src="https://dummy-img.test/thumb.webp" alt="Casa" /></picture>
+          </div>
+        </section>
+        <script>self.__next_f.push([1,"{\\\"ads\\\":[{\\\"listId\\\":1234567,\\\"images\\\":[{\\\"originalWebp\\\":\\\"https://dummy-img.test/pic1.webp\\\"},{\\\"originalWebp\\\":\\\"https://dummy-img.test/pic2.webp\\\"}]}]}"])</script>
+      </div>
+      """
+
+      mock_client = fn _url, _headers ->
+        {:ok, %{status: 200, body: mock_html}}
+      end
+
+      assert {:ok, result} = Olx.fetch_properties(%{state: "sp", http_client: mock_client})
+      assert [property] = result.properties
+      assert property.external_id == "1234567"
+
+      assert property.images == [
+               "https://dummy-img.test/pic1.webp",
+               "https://dummy-img.test/pic2.webp"
+             ]
+    end
+
     test "handles HTTP failure status gracefully" do
       mock_client = fn _url, _headers ->
         {:ok, %{status: 403, body: "Forbidden"}}

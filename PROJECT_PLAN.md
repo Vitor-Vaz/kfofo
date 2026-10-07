@@ -73,10 +73,10 @@ O **kfofo** é um agregador inteligente de anúncios de imóveis (casas e aparta
 | **Setup Base** | Setup do Projeto Elixir + Phoenix LiveView + Tailwind | 🟢 **Concluído** |
 | **Scraper OLX** | Conector OLX com bypass TLS (Node/got-scraping) e parser SSR Floki | 🟢 **Concluído** |
 | **Listagem Inicial** | Página LiveView inicial com busca e exibição em grid | 🟢 **Concluído** |
+| **Busca de Local** | Autocomplete preditivo de Estado, Cidade e Bairro (Google Maps / Places) | 🟢 **Concluído** |
+| **Carrossel de Cards** | Correção de imagens e mini-carrossel interativo no card | 🟢 **Concluído** |
 | **Identidade Kfofo** | Aplicação da marca Kfofo, logotipo e limpeza de termos técnicos na UI | ⏳ *Próximo Passo* |
-| **Carrossel de Cards** | Correção de imagens e mini-carrossel interativo no card | ⏳ *Próximo Passo* |
-| **Busca de Local** | Autocomplete preditivo de Estado, Cidade e Bairro (Google Maps / Places) | ⏳ *Em Planejamento* |
-| **Página de Detalhes**| Página interna de anúncio com galeria completa e ficha do imóvel | ⏳ *Em Planejamento* |
+| **Página de Detalhes**| Página interna de anúncio com galeria completa e ficha do imóvel | ⏳ *Próximo Passo* |
 | **Banco & Filtros** | Persistência PostgreSQL com Ecto e salvamento de buscas | ⏳ *A Seguir* |
 | **Novos Portais** | Integrações com Zap Imóveis, QuintoAndar e Imovelweb | ⏳ *Fase 2* |
 | **Notificações & Auth**| Login social com Google e alertas de novos imóveis | ⏳ *Fase 3* |
@@ -85,7 +85,6 @@ O **kfofo** é um agregador inteligente de anúncios de imóveis (casas e aparta
 
 ## 🚀 Próximos Passos Imediatos
 
-1. **Branding Kfofo & Limpeza de UI**: Inserir logo Kfofo e remover referências técnicas da página inicial.
-2. **Correção de Imagens & Mini-Carrossel**: Garantir exibição correta das imagens e criar o mini-carrossel no card.
-3. **Página de Detalhes do Imóvel**: Desenvolver a visualização interna do anúncio dentro do Kfofo.
-4. **Autocomplete de Localização**: Desenvolver a caixa de busca preditiva de localização integrada (Google Maps/Places).
+1. **Página de Detalhes do Imóvel (`/properties/:id`)**: Desenvolver a visualização interna do anúncio dentro do Kfofo sem redirecionamento externo.
+2. **Branding Kfofo & Refinamento da UI**: Aplicar logotipo e refinar visual da página principal.
+3. **Persistência de Buscas (Ecto / PostgreSQL)**: Salvar pesquisas e filtros pré-definidos do usuário.

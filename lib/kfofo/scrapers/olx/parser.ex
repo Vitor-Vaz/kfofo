@@ -24,9 +24,11 @@ defmodule Kfofo.Scrapers.Olx.Parser do
   Parses HTML document containing `.olx-adcard` sections.
   """
   def parse_html_cards(html) when is_binary(html) do
+    images_map = extract_rsc_images_map(html)
+
     with {:ok, doc} <- Floki.parse_document(html),
          cards when cards != [] <- Floki.find(doc, "section.olx-adcard") do
-      properties = Enum.map(cards, &normalize_card/1)
+      properties = Enum.map(cards, &normalize_card(&1, images_map))
 
       {:ok,
        %{
@@ -45,7 +47,7 @@ defmodule Kfofo.Scrapers.Olx.Parser do
   @doc """
   Normalizes a single `.olx-adcard` HTML node into a standard Property map.
   """
-  def normalize_card(card) do
+  def normalize_card(card, images_map \\ %{}) do
     link =
       card
       |> Floki.find("a[data-testid=\"adcard-link\"]")
@@ -71,11 +73,7 @@ defmodule Kfofo.Scrapers.Olx.Parser do
       |> Floki.text()
       |> String.trim()
 
-    image =
-      card
-      |> Floki.find("picture img")
-      |> Floki.attribute("src")
-      |> List.first()
+    image = extract_card_thumbnail(card)
 
     date =
       card
@@ -83,8 +81,11 @@ defmodule Kfofo.Scrapers.Olx.Parser do
       |> Floki.text()
       |> String.trim()
 
+    external_id = extract_id_from_url(link)
+    images = resolve_card_images(images_map, external_id, image)
+
     %{
-      external_id: extract_id_from_url(link),
+      external_id: external_id,
       title: title,
       price: parse_price(price_raw),
       url: link,
@@ -92,7 +93,7 @@ defmodule Kfofo.Scrapers.Olx.Parser do
       description: "",
       location: parse_location_string(location_raw),
       details: parse_card_details(card),
-      images: extract_card_images(image),
+      images: images,
       published_at: date
     }
   end
@@ -288,8 +289,35 @@ defmodule Kfofo.Scrapers.Olx.Parser do
     end
   end
 
+  defp extract_card_thumbnail(card) do
+    card
+    |> Floki.find("picture img, img.olx-adcard__image, img")
+    |> extract_image_attributes()
+    |> Enum.reject(&(&1 in [nil, ""]))
+    |> List.first()
+  end
+
+  defp extract_image_attributes(nodes) do
+    Floki.attribute(nodes, "src") ++
+      Floki.attribute(nodes, "data-src") ++
+      Floki.attribute(nodes, "data-srcset")
+  end
+
+  defp resolve_card_images(images_map, external_id, fallback_image) do
+    case Map.get(images_map, external_id) do
+      imgs when is_list(imgs) and imgs != [] -> imgs
+      _ -> extract_card_images(fallback_image)
+    end
+  end
+
   defp extract_card_images(nil), do: []
-  defp extract_card_images(url) when is_binary(url), do: [url]
+
+  defp extract_card_images(url) when is_binary(url) do
+    case String.trim(url) do
+      "" -> []
+      trimmed -> [trimmed]
+    end
+  end
 
   defp extract_id_from_url(url) when is_binary(url) do
     case Regex.run(~r/-(\d{7,})$/, url) do
@@ -299,4 +327,58 @@ defmodule Kfofo.Scrapers.Olx.Parser do
   end
 
   defp extract_id_from_url(_), do: ""
+
+  @doc """
+  Extracts mapping of ad external IDs to list of images from RSC scripts if present.
+  """
+  def extract_rsc_images_map(html) when is_binary(html) do
+    with {:ok, doc} <- Floki.parse_document(html),
+         scripts <- Floki.find(doc, "script"),
+         matching when not is_nil(matching) <- find_list_id_script(scripts),
+         {:ok, text} <- get_script_text_content(matching),
+         {:ok, unescaped} <- extract_and_unescape_rsc(text) do
+      parse_rsc_images(unescaped)
+    else
+      _ -> %{}
+    end
+  end
+
+  defp find_list_id_script(scripts) do
+    Enum.find(scripts, fn {"script", _attrs, children} ->
+      case children do
+        [t] when is_binary(t) -> String.contains?(t, "listId")
+        _ -> false
+      end
+    end)
+  end
+
+  defp get_script_text_content({"script", _attrs, [text]}) when is_binary(text), do: {:ok, text}
+  defp get_script_text_content(_), do: :error
+
+  defp extract_and_unescape_rsc(text) do
+    case Regex.run(~r/self\.__next_f\.push\(\[1,\s*\"(.*)\"\]\)\s*$/s, text) do
+      [_, inner_escaped] -> Jason.decode("\"" <> inner_escaped <> "\"")
+      _ -> :error
+    end
+  end
+
+  defp parse_rsc_images(unescaped) do
+    regex = ~r/\"listId\":(\d+)[^\[]*?\"images\":(\[[^\]]+\])/
+
+    Regex.scan(regex, unescaped)
+    |> Enum.reduce(%{}, fn [_, id, images_json], acc ->
+      case Jason.decode(images_json) do
+        {:ok, imgs} ->
+          urls =
+            imgs
+            |> Enum.map(fn img -> img["originalWebp"] || img["original"] end)
+            |> Enum.reject(&is_nil/1)
+
+          Map.put(acc, id, urls)
+
+        _ ->
+          acc
+      end
+    end)
+  end
 end
