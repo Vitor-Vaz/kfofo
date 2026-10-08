@@ -84,6 +84,10 @@ defmodule Kfofo.Scrapers.Olx.Parser do
     external_id = extract_id_from_url(link)
     images = resolve_card_images(images_map, external_id, image)
 
+    parsed_location = parse_location_string(location_raw)
+    state_from_url = extract_state_from_url(link)
+    final_location = Map.put(parsed_location, :state, parsed_location[:state] || state_from_url)
+
     %{
       external_id: external_id,
       title: title,
@@ -91,7 +95,7 @@ defmodule Kfofo.Scrapers.Olx.Parser do
       url: link,
       source: "olx",
       description: "",
-      location: parse_location_string(location_raw),
+      location: final_location,
       details: parse_card_details(card),
       images: images,
       published_at: date
@@ -327,6 +331,24 @@ defmodule Kfofo.Scrapers.Olx.Parser do
   end
 
   defp extract_id_from_url(_), do: ""
+
+  @doc """
+  Extracts the Brazilian 2-letter state acronym from an OLX ad URL subdomain or path.
+  """
+  def extract_state_from_url(url) when is_binary(url) do
+    case Regex.run(~r/^https?:\/\/([a-z]{2})\.olx\.com\.br/i, url) do
+      [_, state_code] ->
+        String.downcase(state_code)
+
+      _ ->
+        case Regex.run(~r/\/estado-([a-z]{2})/i, url) do
+          [_, state_code] -> String.downcase(state_code)
+          _ -> nil
+        end
+    end
+  end
+
+  def extract_state_from_url(_), do: nil
 
   @doc """
   Extracts mapping of ad external IDs to list of images from RSC scripts if present.

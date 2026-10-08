@@ -4,23 +4,34 @@ defmodule KfofoWeb.PropertyLive.Index do
   alias Kfofo.Locations
   alias Kfofo.Scrapers.Olx
 
+  @search_keys [
+    "location_query",
+    "state",
+    "city",
+    "neighborhood",
+    "type",
+    "min_price",
+    "max_price",
+    "bedrooms"
+  ]
+
+  @default_search_form %{
+    "location_query" => "São Paulo, SP",
+    "state" => "sp",
+    "city" => "sao-paulo",
+    "neighborhood" => "",
+    "type" => "venda",
+    "min_price" => "",
+    "max_price" => "",
+    "bedrooms" => ""
+  }
+
   @impl true
   def mount(_params, _session, socket) do
-    search_form = %{
-      "location_query" => "São Paulo, SP",
-      "state" => "sp",
-      "city" => "sao-paulo",
-      "neighborhood" => "",
-      "type" => "venda",
-      "min_price" => "",
-      "max_price" => "",
-      "bedrooms" => ""
-    }
-
     socket =
       socket
       |> assign(:page_title, "Kfofo - O seu novo lar")
-      |> assign(:search_form, search_form)
+      |> assign(:search_form, @default_search_form)
       |> assign(:location_predictions, [])
       |> assign(:show_predictions, false)
       |> assign(:location_error, nil)
@@ -31,6 +42,49 @@ defmodule KfofoWeb.PropertyLive.Index do
       |> assign(:error_message, nil)
 
     {:ok, socket}
+  end
+
+  @impl true
+  def handle_params(params, _uri, socket) do
+    search_params = Map.take(params, @search_keys)
+
+    case map_size(search_params) > 0 do
+      true ->
+        merged_form = Map.merge(socket.assigns.search_form, search_params)
+
+        socket =
+          socket
+          |> assign(:search_form, merged_form)
+          |> assign(:loading, true)
+          |> assign(:searched, true)
+          |> assign(:error_message, nil)
+          |> assign(:show_predictions, false)
+          |> push_event("save_search", merged_form)
+          |> start_async_fetch(merged_form)
+
+        {:noreply, socket}
+
+      false ->
+        {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_event("suggest_locations", %{"key" => key}, socket)
+      when key in [
+             "ArrowDown",
+             "ArrowUp",
+             "ArrowLeft",
+             "ArrowRight",
+             "Enter",
+             "Escape",
+             "Tab",
+             "Shift",
+             "Control",
+             "Alt",
+             "Meta"
+           ] do
+    {:noreply, socket}
   end
 
   @impl true
@@ -85,11 +139,10 @@ defmodule KfofoWeb.PropertyLive.Index do
   end
 
   @impl true
-  def handle_event(
-        "select_location",
-        %{"place-id" => place_id, "description" => description},
-        socket
-      ) do
+  def handle_event("select_location", params, socket) do
+    place_id = params["place-id"] || params["place_id"]
+    description = params["description"] || ""
+
     socket =
       case Locations.get_location_details(place_id) do
         {:ok, details} ->
@@ -125,17 +178,22 @@ defmodule KfofoWeb.PropertyLive.Index do
   @impl true
   def handle_event("search", %{"search" => params}, socket) do
     merged_params = Map.merge(socket.assigns.search_form, params)
+    query_params = clean_params(merged_params)
 
     socket =
       socket
-      |> assign(:search_form, merged_params)
-      |> assign(:loading, true)
-      |> assign(:searched, true)
-      |> assign(:error_message, nil)
-      |> assign(:show_predictions, false)
-      |> start_async_fetch(merged_params)
+      |> push_event("save_search", merged_params)
+      |> push_patch(to: ~p"/properties?#{query_params}")
 
     {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("restore_search", params, socket) when is_map(params) do
+    merged_params = Map.merge(socket.assigns.search_form, Map.take(params, @search_keys))
+    query_params = clean_params(merged_params)
+
+    {:noreply, push_patch(socket, to: ~p"/properties?#{query_params}")}
   end
 
   @impl true
@@ -182,12 +240,17 @@ defmodule KfofoWeb.PropertyLive.Index do
   end
 
   defp parse_search_opts(params) do
+    explicit_state = get_clean_string(params, "state")
+    explicit_city = get_clean_string(params, "city")
+    explicit_neighborhood = get_clean_string(params, "neighborhood")
     location_query = Map.get(params, "location_query") || ""
-    {inferred_city, inferred_state, inferred_neighborhood} = parse_typed_location(location_query)
 
-    state = choose_location_val(inferred_state, Map.get(params, "state"))
-    city = choose_location_val(inferred_city, Map.get(params, "city"))
-    neighborhood = choose_location_val(Map.get(params, "neighborhood"), inferred_neighborhood)
+    {inferred_city, inferred_state, inferred_neighborhood} =
+      parse_typed_location(location_query)
+
+    state = explicit_state || inferred_state
+    city = explicit_city || inferred_city
+    neighborhood = explicit_neighborhood || inferred_neighborhood
 
     %{
       state: state,
@@ -201,7 +264,11 @@ defmodule KfofoWeb.PropertyLive.Index do
   end
 
   defp parse_typed_location(query) when is_binary(query) do
-    trimmed = String.trim(query)
+    trimmed =
+      query
+      |> String.trim()
+      |> String.replace(~r/,\s*Brasil$/i, "")
+      |> String.replace(~r/,\s*Brazil$/i, "")
 
     parts =
       trimmed
@@ -210,7 +277,7 @@ defmodule KfofoWeb.PropertyLive.Index do
       |> Enum.reject(&(&1 == ""))
 
     case parts do
-      [neighborhood, city, uf] when byte_size(uf) == 2 ->
+      [neighborhood, city, uf | _] when byte_size(uf) == 2 ->
         {Locations.slugify(city), String.downcase(uf), Locations.slugify(neighborhood)}
 
       [city, uf] when byte_size(uf) == 2 ->
@@ -218,11 +285,11 @@ defmodule KfofoWeb.PropertyLive.Index do
 
       [single] ->
         case Regex.run(~r/^(.*?)\s+([a-zA-Z]{2})$/, single) do
-          [_, city_raw, uf] ->
+          [_, city_raw, uf] when byte_size(uf) == 2 ->
             {Locations.slugify(city_raw), String.downcase(uf), nil}
 
           _ ->
-            {Locations.slugify(single), nil, nil}
+            {nil, nil, Locations.slugify(single)}
         end
 
       _ ->
@@ -232,9 +299,14 @@ defmodule KfofoWeb.PropertyLive.Index do
 
   defp parse_typed_location(_), do: {nil, nil, nil}
 
-  defp choose_location_val(nil, fallback), do: fallback
-  defp choose_location_val("", fallback), do: fallback
-  defp choose_location_val(val, _fallback), do: val
+  defp get_clean_string(map, key) do
+    case Map.get(map, key) do
+      nil -> nil
+      "" -> nil
+      val when is_binary(val) -> String.trim(val)
+      _ -> nil
+    end
+  end
 
   defp parse_type("aluguel"), do: :aluguel
   defp parse_type(_), do: :venda
@@ -321,4 +393,10 @@ defmodule KfofoWeb.PropertyLive.Index do
   defp maybe_put_field(map, _key, nil), do: map
   defp maybe_put_field(map, _key, ""), do: map
   defp maybe_put_field(map, key, val), do: Map.put(map, key, val)
+
+  defp clean_params(params) do
+    params
+    |> Enum.reject(fn {_k, v} -> is_nil(v) or v == "" end)
+    |> Map.new()
+  end
 end

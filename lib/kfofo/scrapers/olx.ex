@@ -30,10 +30,49 @@ defmodule Kfofo.Scrapers.Olx do
 
   """
   def fetch_properties(opts \\ %{}) do
-    with {:ok, html} <- Client.fetch_search_page(opts) do
-      Parser.parse_page(html)
+    with {:ok, html} <- Client.fetch_search_page(opts),
+         {:ok, result} <- Parser.parse_page(html) do
+      filtered = filter_by_state(result.properties, opts)
+      {:ok, %{result | properties: filtered, total: length(filtered)}}
     end
   end
+
+  defp filter_by_state(properties, opts) when is_list(properties) and is_map(opts) do
+    apply_state_filter(properties, get_clean_opt(opts, :state))
+  end
+
+  defp filter_by_state(properties, _), do: properties
+
+  defp apply_state_filter(properties, nil), do: properties
+
+  defp apply_state_filter(properties, target_state) do
+    Enum.filter(properties, &matches_state?(&1, target_state))
+  end
+
+  defp matches_state?(%{location: %{state: nil}}, _target), do: true
+  defp matches_state?(%{location: %{state: ""}}, _target), do: true
+
+  defp matches_state?(%{location: %{state: state}}, target) when is_binary(state) do
+    String.downcase(state) == target
+  end
+
+  defp matches_state?(%{location: %{state: state}}, target) when is_atom(state) do
+    state |> to_string() |> String.downcase() == target
+  end
+
+  defp matches_state?(_property, _target), do: true
+
+  defp get_clean_opt(opts, key) when is_map(opts) do
+    clean_opt_val(Map.get(opts, key) || Map.get(opts, to_string(key)))
+  end
+
+  defp get_clean_opt(_, _), do: nil
+
+  defp clean_opt_val(nil), do: nil
+  defp clean_opt_val(""), do: nil
+  defp clean_opt_val(str) when is_binary(str), do: str |> String.trim() |> String.downcase()
+  defp clean_opt_val(atom) when is_atom(atom), do: atom |> to_string() |> String.downcase()
+  defp clean_opt_val(_), do: nil
 
   defdelegate build_url(opts \\ %{}), to: Client
   defdelegate parse_page(html), to: Parser

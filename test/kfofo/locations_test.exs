@@ -27,6 +27,7 @@ defmodule Kfofo.LocationsTest do
         assert url =~ "places:autocomplete"
         assert payload["input"] == "Moema"
         assert payload["includedRegionCodes"] == ["br"]
+        assert payload["includedPrimaryTypes"] == ["(regions)"]
         assert {"content-type", "application/json"} in headers
 
         body = %{
@@ -40,6 +41,20 @@ defmodule Kfofo.LocationsTest do
                   "secondaryText" => %{"text" => "São Paulo - SP, Brasil"}
                 },
                 "types" => ["sublocality_level_1", "sublocality", "political"]
+              }
+            },
+            %{
+              "placePrediction" => %{
+                "placeId" => "establishment_123",
+                "text" => %{"text" => "Bangu Shopping, Rio de Janeiro - RJ"},
+                "types" => ["shopping_mall", "establishment", "point_of_interest"]
+              }
+            },
+            %{
+              "placePrediction" => %{
+                "placeId" => "country_123",
+                "text" => %{"text" => "Brasil"},
+                "types" => ["country", "political"]
               }
             }
           ]
