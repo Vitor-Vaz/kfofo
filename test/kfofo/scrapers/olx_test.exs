@@ -228,6 +228,37 @@ defmodule Kfofo.Scrapers.OlxTest do
              ]
     end
 
+    test "discards sponsored or cross-region ads with a mismatching state" do
+      mock_html = """
+      <div class="adListContainer">
+        <section class="olx-adcard">
+          <a data-testid="adcard-link" class="olx-adcard__link" title="Casa Campo Grande RJ" href="https://rj.olx.com.br/rio-de-janeiro-e-regiao/imoveis/casa-1234567">
+            <h2 class="olx-adcard__title">Casa Campo Grande RJ</h2>
+          </a>
+          <h3 class="olx-adcard__price">R$ 300.000</h3>
+          <p class="olx-adcard__location">Rio de Janeiro, Campo Grande</p>
+        </section>
+        <section class="olx-adcard">
+          <a data-testid="adcard-link" class="olx-adcard__link" title="Casa Campo Grande MS" href="https://ms.olx.com.br/mato-grosso-do-sul/imoveis/casa-9999999">
+            <h2 class="olx-adcard__title">Casa Campo Grande MS</h2>
+          </a>
+          <h3 class="olx-adcard__price">R$ 350.000</h3>
+          <p class="olx-adcard__location">Campo Grande, Vila Progresso</p>
+        </section>
+      </div>
+      """
+
+      mock_client = fn _url, _headers ->
+        {:ok, %{status: 200, body: mock_html}}
+      end
+
+      assert {:ok, result} = Olx.fetch_properties(%{state: "rj", http_client: mock_client})
+      assert length(result.properties) == 1
+      assert [property] = result.properties
+      assert property.external_id == "1234567"
+      assert property.location.state == "rj"
+    end
+
     test "handles HTTP failure status gracefully" do
       mock_client = fn _url, _headers ->
         {:ok, %{status: 403, body: "Forbidden"}}

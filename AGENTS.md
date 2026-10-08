@@ -14,7 +14,8 @@ Este documento estabelece as regras de engajamento, boas práticas e restriçõe
      - **Como Testar**: Comandos diretos para validação (`mix test`, `mix format`, etc.).
      - **Checklist de Qualidade**: Confirmação dos critérios de aceitação básicos.
    - Este arquivo servirá para o desenvolvedor copiar e colar na descrição do Pull Request no GitHub.
-
+4. Sempre ao finalizar uma tarefa, rodar todos os testes e linters.
+5. Sempre ao finalizar uma tarefa, revisar o arquivo PROJECT_PLAN.MD e atualizar o status de cada tarefa.
 ---
 
 ## 🚀 Arquitetura & Stack Tecnológica

@@ -26,65 +26,72 @@ O **kfofo** é um agregador inteligente de anúncios de imóveis (casas e aparta
 
 ---
 
-## 💡 Funcionalidades Mapeadas & Novas Demandas
+## 💡 Planejamento de Funcionalidades por Prazo
 
-### 1. Barra de Busca Inteligente de Localização (Autocomplete)
-- Substituir campos manuais isolados de "Estado" e "Cidade" por um campo de busca integrado com sugestões preditivas.
-- Integração com Google Places / Google Maps (ou base estruturada de geolocalização) para autocompletar e sugerir bairros, cidades e estados enquanto o usuário digita.
+### ⚡ 1. Imediato (Refinamentos de UI, UX e Carrossel)
+- **Carregamento e Transição Suave do Carrossel de Imagens**:
+  - Ajustar o carregamento para que todas as fotos do card venham carregadas previamente.
+  - Implementar animação fluida de transição/deslizamento lateral (slide/track) ao navegar entre fotos pelas setas ou gestos de swipe, eliminando recarregamentos ou flashes a cada clique.
+- **Redimensionamento dos Cards de Imóveis**:
+  - Aumentar a escala e largura dos cards para ocuparem pelo menos 80% lateralmente, exibindo menos cards de uma vez por linha para uma experiência mais confortável e imersiva.
+- **Expansão do Elemento de Pesquisa**:
+  - Ampliar o tamanho lateral do componente de busca e filtros para acompanhar a nova escala da página.
+- **Remoção de Elementos Residuais do Phoenix**:
+  - Remover o cabeçalho padrão do Phoenix (`app.html.heex` / links @elixirphoenix) e restrições de largura herdadas (`max-w-2xl`).
+- **Persistência dos Filtros de Busca (Cache / Cookies / LocalStorage / Query Params)**:
+  - Salvar o estado da busca para que a recarga da página (F5) não resete os filtros e a localização preenchidos.
+- **Estilização da Caixa de Texto de Busca**:
+  - Exibir o texto inicial padrão da pesquisa em itálico e com tonalidade mais clara/suave.
 
-### 2. Cards com Mini-Carrossel de Imagens
-- Correção na extração e renderização das imagens dos imóveis nos cards da listagem.
-- Mini-carrossel interativo diretamente dentro do card (com setas de navegação anterior/próxima e indicadores de posição), reproduzindo a experiência visual intuitiva das principais plataformas.
+---
 
-### 3. Página Interna de Detalhes do Imóvel
-- Página interna dedicada no Kfofo (`/properties/:id`) para exibição completa do imóvel, sem redirecionar o usuário para o site de origem.
-- Exibição de galeria completa de fotos em alta resolução, descrição detalhada, localização no mapa, tabela de especificações (área, quartos, banheiros, vagas, condomínio, IPTU) e identificação da fonte de origem.
+### 🟡 2. Médio Prazo (Nova Jornada do Usuário, Detalhes & Portais)
+- **Refatoração da Jornada do Usuário no Site**:
+  - **1º Acesso (Página Inicial / Hero Search)**:
+    - Interface focada em uma caixa de busca ampla e imersiva no centro da tela com imagem de fundo temática de lares/casas.
+  - **Página de Resultados de Busca**:
+    - Após submeter os filtros, transição para tela com layout em duas seções: barra lateral dedicada para filtros de pesquisa e área principal expandida com os cards de imóveis.
+  - **Botão de Detalhes & Página Interna do Imóvel (`/properties/:id`)**:
+    - Cada card terá botão dedicado de "Detalhes" abrindo a ficha completa do imóvel (galeria em alta resolução, ficha técnica com condomínio/IPTU, descrição completa e link de origem).
+- **Expansão de Marketplaces (Novos Scrapers)**:
+  - 🟡 **Zap Imóveis** (Fase 2).
+  - 🟠 **QuintoAndar** (Fase 3).
+  - 🔴 **Imovelweb** (Fase 4).
+- **Refinamento de Scraping / Filtro de Região e Cidade (Ex: Nova Iguaçu / RJ)**:
+  - Investigar e ajustar a query/filtros de cidades da Baixada Fluminense / Região Metropolitana (ex: `properties?city=nova-iguacu&location_query=Nova+Iguaçu%2C+RJ%2C+Brasil&state=rj&type=aluguel`) para evitar que a OLX retorne anúncios genéricos ou patrocinados da capital (Rio de Janeiro) em vez do município pesquisado.
+- **Filtros Avançados & Ordenação**:
+  - Ordenação por preço (menor/maior), mais recentes e filtros adicionais de vagas e banheiros.
+- **Destaque de Visualizações ("Nunca Visualizados" vs "Já Visualizados")**:
+  - Identificação visual para anúncios já abertos pelo usuário e filtro para exibir apenas novidades.
+- **Persistência de Buscas Salvas no Banco (Ecto / PostgreSQL)**:
+  - Schemas para armazenamento de histórico e buscas favoritas.
 
-### 4. Identidade Visual da Marca Kfofo (Branding & UI)
-- Inclusão do logotipo e marca oficial do **Kfofo** no cabeçalho e na identidade visual geral.
-- Remoção de qualquer terminologia técnica interna da interface do usuário (ex: referências a "LiveView", "extração SSR", "Scraper", etc.), mantendo a comunicação totalmente voltada para o usuário final que busca um lar.
+---
 
-### 5. Filtros de Pesquisa Unificados
-- Filtros abrangentes (faixa de preço, número de quartos/banheiros, vagas de garagem, tipo: aluguel ou venda).
-- Normalização transparente dos filtros para os marketplaces suportados.
-
-### 6. Salvamento de Pesquisas e Filtros
-- Permite ao usuário salvar conjuntos de filtros pré-definidos (ex: *"Aluguel em Moema até R$ 3.500 com 2 vagas"*).
-- Evita que o usuário precise reconfigurar os filtros a cada nova visita ao site.
-
-### 7. Destaque de Visualizações ("Nunca Visualizadas" vs "Já Visualizadas")
-- Mecanismo visual para diferenciar imóveis inéditos daqueles que o usuário já abriu/visualizou.
-- Filtro dedicado para exibir apenas imóveis não visualizados, facilitando as primeiras sessões de busca e destacando novas oportunidades.
-
-### 8. Sistema de Notificação de Novos Anúncios
-- Monitoramento em tempo real/periódico de buscas salvas.
-- Envio de alertas/notificações quando um novo imóvel alinhado aos filtros salvos for publicado.
-
-### 6. Sistema de Autenticação (Google Login)
-- Login social com Google OAuth2 (será implementado futuramente).
-- Vínculo de pesquisas salvas e histórico de imóveis visualizados ao perfil do usuário.
+### 🔵 3. Longo Prazo (Autenticação & Alertas)
+- **Sistema de Autenticação (Google Login)**:
+  - Login social com Google OAuth2 para sincronização de preferências entre dispositivos.
+- **Sistema de Notificações de Novos Anúncios**:
+  - Monitoramento contínuo e envio de alertas automáticos quando novos anúncios compatíveis forem encontrados.
 
 ---
 
 ## 📍 Status Atual do Desenvolvimento
 
-| Etapa | Descrição | Status |
-| :--- | :--- | :---: |
-| **Setup Base** | Setup do Projeto Elixir + Phoenix LiveView + Tailwind | 🟢 **Concluído** |
-| **Scraper OLX** | Conector OLX com bypass TLS (Node/got-scraping) e parser SSR Floki | 🟢 **Concluído** |
-| **Listagem Inicial** | Página LiveView inicial com busca e exibição em grid | 🟢 **Concluído** |
-| **Busca de Local** | Autocomplete preditivo de Estado, Cidade e Bairro (Google Maps / Places) | 🟢 **Concluído** |
-| **Carrossel de Cards** | Correção de imagens e mini-carrossel interativo no card | 🟢 **Concluído** |
-| **Identidade Kfofo** | Aplicação da marca Kfofo, logotipo e limpeza de termos técnicos na UI | ⏳ *Próximo Passo* |
-| **Página de Detalhes**| Página interna de anúncio com galeria completa e ficha do imóvel | ⏳ *Próximo Passo* |
-| **Banco & Filtros** | Persistência PostgreSQL com Ecto e salvamento de buscas | ⏳ *A Seguir* |
-| **Novos Portais** | Integrações com Zap Imóveis, QuintoAndar e Imovelweb | ⏳ *Fase 2* |
-| **Notificações & Auth**| Login social com Google e alertas de novos imóveis | ⏳ *Fase 3* |
-
----
-
-## 🚀 Próximos Passos Imediatos
-
-1. **Página de Detalhes do Imóvel (`/properties/:id`)**: Desenvolver a visualização interna do anúncio dentro do Kfofo sem redirecionamento externo.
-2. **Branding Kfofo & Refinamento da UI**: Aplicar logotipo e refinar visual da página principal.
-3. **Persistência de Buscas (Ecto / PostgreSQL)**: Salvar pesquisas e filtros pré-definidos do usuário.
+| Etapa | Descrição | Prazo / Prioridade | Status |
+| :--- | :--- | :---: | :---: |
+| **Setup Base** | Setup Elixir + Phoenix LiveView + Tailwind + PostgreSQL | - | 🟢 **Concluído** |
+| **Scraper OLX** | Conector OLX com bypass TLS e parser Floki | - | 🟢 **Concluído** |
+| **Busca de Local** | Autocomplete preditivo (Google Places API New) com Bairro | - | 🟢 **Concluído** |
+| **Carrossel & Imagens** | Carregamento total e animação de slide lateral | ⚡ Imediato | 🟢 **Concluído** |
+| **Escala dos Cards** | Ampliação lateral dos cards (pelo menos 80% da tela) | ⚡ Imediato | 🟢 **Concluído** |
+| **Escala da Busca** | Aumento da largura lateral do elemento de pesquisa | ⚡ Imediato | 🟢 **Concluído** |
+| **Limpeza de Layout** | Remoção do header padrão Phoenix e restrição `max-w-2xl` | ⚡ Imediato | 🟢 **Concluído** |
+| **Persistência da Busca**| Salvar filtros em cache/cookie/localStorage contra F5 | ⚡ Imediato | 🟢 **Concluído** |
+| **Estilo da Busca** | Texto padrão em itálico e mais claro na caixa de texto | ⚡ Imediato | 🟢 **Concluído** |
+| **Filtro Região/Cidade**| Ajuste de query OLX para Baixada/Municípios (Nova Iguaçu) | 🟡 Médio Prazo | ⏳ *Backlog* |
+| **Nova Jornada (Hero)** | 1º acesso com busca centralizada e imagem de fundo | 🟡 Médio Prazo | ⏳ *Planejado* |
+| **Layout Resultados** | Filtros na barra lateral e listagem de cards ao lado | 🟡 Médio Prazo | ⏳ *Planejado* |
+| **Página de Detalhes**| Página interna de anúncio com ficha e galeria completa | 🟡 Médio Prazo | ⏳ *Planejado* |
+| **Novos Portais** | Integrações com Zap Imóveis, QuintoAndar e Imovelweb | 🟡 Médio Prazo | ⏳ *Planejado* |
+| **Auth & Alertas** | Google OAuth2 e notificações de novos imóveis | 🔵 Longo Prazo | ⏳ *Planejado* |

@@ -25,6 +25,7 @@ defmodule Kfofo.Locations.GooglePlaces do
       payload = %{
         "input" => query,
         "includedRegionCodes" => ["br"],
+        "includedPrimaryTypes" => ["(regions)"],
         "languageCode" => "pt-BR"
       }
 
@@ -146,32 +147,67 @@ defmodule Kfofo.Locations.GooglePlaces do
     |> Keyword.get(:api_key)
   end
 
-  defp normalize_new_prediction(%{"placePrediction" => pred}) do
-    struct_format = Map.get(pred, "structuredFormat", %{})
-    text_obj = Map.get(pred, "text", %{})
+  @disallowed_prediction_types [
+    "establishment",
+    "point_of_interest",
+    "shopping_mall",
+    "store",
+    "food",
+    "restaurant",
+    "lodging",
+    "tourist_attraction",
+    "country"
+  ]
 
-    %{
-      place_id: Map.get(pred, "placeId"),
-      description: Map.get(text_obj, "text") || "",
-      main_text: get_in(struct_format, ["mainText", "text"]) || Map.get(text_obj, "text") || "",
-      secondary_text: get_in(struct_format, ["secondaryText", "text"]) || "",
-      types: Map.get(pred, "types", [])
-    }
+  defp normalize_new_prediction(%{"placePrediction" => pred}) do
+    types = Map.get(pred, "types", [])
+
+    case valid_location_prediction?(types) do
+      true ->
+        struct_format = Map.get(pred, "structuredFormat", %{})
+        text_obj = Map.get(pred, "text", %{})
+
+        %{
+          place_id: Map.get(pred, "placeId"),
+          description: Map.get(text_obj, "text") || "",
+          main_text:
+            get_in(struct_format, ["mainText", "text"]) || Map.get(text_obj, "text") || "",
+          secondary_text: get_in(struct_format, ["secondaryText", "text"]) || "",
+          types: types
+        }
+
+      false ->
+        nil
+    end
   end
 
   defp normalize_new_prediction(_), do: nil
 
   defp normalize_legacy_prediction(pred) do
-    formatting = Map.get(pred, "structured_formatting", %{})
+    types = Map.get(pred, "types", [])
 
-    %{
-      place_id: Map.get(pred, "place_id"),
-      description: Map.get(pred, "description"),
-      main_text: Map.get(formatting, "main_text") || Map.get(pred, "description"),
-      secondary_text: Map.get(formatting, "secondary_text", ""),
-      types: Map.get(pred, "types", [])
-    }
+    case valid_location_prediction?(types) do
+      true ->
+        formatting = Map.get(pred, "structured_formatting", %{})
+
+        %{
+          place_id: Map.get(pred, "place_id"),
+          description: Map.get(pred, "description"),
+          main_text: Map.get(formatting, "main_text") || Map.get(pred, "description"),
+          secondary_text: Map.get(formatting, "secondary_text", ""),
+          types: types
+        }
+
+      false ->
+        nil
+    end
   end
+
+  defp valid_location_prediction?(types) when is_list(types) do
+    not Enum.any?(types, &(&1 in @disallowed_prediction_types))
+  end
+
+  defp valid_location_prediction?(_), do: true
 
   defp normalize_new_details(place_id, result) do
     components = Map.get(result, "addressComponents", [])

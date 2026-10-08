@@ -27,12 +27,13 @@ let Hooks = {}
 Hooks.CardCarousel = {
   mounted() {
     this.index = 0
+    this.track = this.el.querySelector("[data-track]")
     this.slides = Array.from(this.el.querySelectorAll("[data-slide]"))
     this.bullets = Array.from(this.el.querySelectorAll("[data-bullet]"))
     this.counter = this.el.querySelector("[data-counter]")
     this.total = this.slides.length
 
-    if (this.total <= 1) return
+    if (this.total <= 1 || !this.track) return
 
     this.prevBtn = this.el.querySelector("[data-action='prev']")
     this.nextBtn = this.el.querySelector("[data-action='next']")
@@ -65,7 +66,6 @@ Hooks.CardCarousel = {
       let diffX = startX - e.changedTouches[0].clientX
       let diffY = startY - e.changedTouches[0].clientY
 
-      // Only swipe if horizontal motion is significantly larger than vertical motion
       if (Math.abs(diffX) > 40 && Math.abs(diffX) > Math.abs(diffY)) {
         if (diffX > 0) {
           this.goTo(this.index + 1)
@@ -81,15 +81,9 @@ Hooks.CardCarousel = {
     if (idx >= this.total) idx = 0
     this.index = idx
 
-    this.slides.forEach((slide, i) => {
-      if (i === this.index) {
-        slide.classList.remove("hidden")
-        slide.classList.add("block")
-      } else {
-        slide.classList.add("hidden")
-        slide.classList.remove("block")
-      }
-    })
+    if (this.track) {
+      this.track.style.transform = `translateX(-${this.index * 100}%)`
+    }
 
     if (this.bullets.length > 0) {
       let maxBullet = this.bullets.length - 1
@@ -108,6 +102,144 @@ Hooks.CardCarousel = {
     if (this.counter) {
       this.counter.textContent = `${this.index + 1}/${this.total}`
     }
+  }
+}
+
+Hooks.SearchPersistence = {
+  mounted() {
+    this.handleEvent("save_search", (params) => {
+      try {
+        localStorage.setItem("kfofo_search_filters", JSON.stringify(params))
+      } catch (_e) {}
+    })
+
+    const urlParams = new URLSearchParams(window.location.search)
+    const hasSearchParams = urlParams.has("location_query") || urlParams.has("city") || urlParams.has("state") || urlParams.has("type")
+
+    if (!hasSearchParams) {
+      try {
+        const saved = localStorage.getItem("kfofo_search_filters")
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          if (parsed && typeof parsed === "object") {
+            this.pushEvent("restore_search", parsed)
+          }
+        }
+      } catch (_e) {}
+    }
+  }
+}
+
+Hooks.LocationAutocomplete = {
+  mounted() {
+    this.selectedIndex = -1
+    this.debounceTimer = null
+    this.input = this.el.querySelector("input[name='search[location_query]']")
+
+    if (!this.input) return
+
+    this.input.addEventListener("input", (e) => {
+      clearTimeout(this.debounceTimer)
+      const val = e.target.value
+      this.debounceTimer = setTimeout(() => {
+        this.pushEvent("suggest_locations", { value: val })
+      }, 300)
+    })
+
+    this.input.addEventListener("keydown", (e) => {
+      const items = Array.from(this.el.querySelectorAll("[data-prediction-item]"))
+      if (items.length === 0) return
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault()
+        this.selectedIndex = (this.selectedIndex + 1) % items.length
+        this.updateHighlight(items)
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault()
+        this.selectedIndex = (this.selectedIndex - 1 + items.length) % items.length
+        this.updateHighlight(items)
+      } else if ((e.key === "Enter" || e.key === "Tab") && this.selectedIndex >= 0) {
+        const item = items[this.selectedIndex]
+        if (item) {
+          e.preventDefault()
+          e.stopPropagation()
+          clearTimeout(this.debounceTimer)
+          const placeId = item.getAttribute("phx-value-place-id")
+          const description = item.getAttribute("phx-value-description")
+
+          if (placeId && description) {
+            this.input.value = description
+            this.pushEvent("select_location", { "place-id": placeId, "description": description })
+          } else {
+            item.click()
+          }
+          this.selectedIndex = -1
+        }
+      } else if (e.key === "Escape") {
+        clearTimeout(this.debounceTimer)
+        this.pushEvent("close_predictions", {})
+        this.selectedIndex = -1
+      }
+    })
+
+    this.bindPredictionClicks()
+
+    document.addEventListener("click", (e) => {
+      if (!this.el.contains(e.target)) {
+        const dropdown = this.el.querySelector("[data-predictions-dropdown]")
+        if (dropdown) {
+          clearTimeout(this.debounceTimer)
+          this.pushEvent("close_predictions", {})
+          this.selectedIndex = -1
+        }
+      }
+    })
+  },
+
+  updated() {
+    const items = Array.from(this.el.querySelectorAll("[data-prediction-item]"))
+    if (this.selectedIndex >= items.length) {
+      this.selectedIndex = -1
+    }
+    if (this.selectedIndex >= 0 && items.length > 0) {
+      this.updateHighlight(items)
+    }
+    this.bindPredictionClicks()
+  },
+
+  bindPredictionClicks() {
+    const items = Array.from(this.el.querySelectorAll("[data-prediction-item]"))
+    items.forEach((item, index) => {
+      item.addEventListener("mouseenter", () => {
+        this.selectedIndex = index
+        this.updateHighlight(items)
+      })
+      item.addEventListener("click", (e) => {
+        clearTimeout(this.debounceTimer)
+        const placeId = item.getAttribute("phx-value-place-id")
+        const description = item.getAttribute("phx-value-description")
+        if (placeId && description) {
+          e.preventDefault()
+          e.stopPropagation()
+          this.input.value = description
+          this.pushEvent("select_location", { "place-id": placeId, "description": description })
+          this.selectedIndex = -1
+        }
+      })
+    })
+  },
+
+  updateHighlight(items) {
+    items.forEach((item, i) => {
+      if (i === this.selectedIndex) {
+        item.classList.add("bg-orange-500/25", "border-orange-500", "!pl-5", "text-white")
+        item.classList.remove("border-transparent", "pl-4")
+        item.scrollIntoView({ block: "nearest", behavior: "smooth" })
+      } else {
+        item.classList.remove("bg-orange-500/25", "border-orange-500", "!pl-5", "text-white")
+        item.classList.add("border-transparent", "pl-4")
+      }
+    })
   }
 }
 
