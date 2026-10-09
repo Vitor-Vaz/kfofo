@@ -45,21 +45,33 @@ defmodule KfofoWeb.PropertyLiveTest do
     {:ok, view, _html} = live(conn, "/properties")
 
     view
-    |> form("form", %{
+    |> form("form[phx-submit='search']", %{
       "search" => %{
         "location_query" => "Pinheiros, SP",
         "type" => "aluguel",
-        "min_price" => "2500",
-        "max_price" => "5000",
-        "bedrooms" => "2"
+        "property_type" => "apartamento",
+        "min_price" => "1000",
+        "max_price" => "2500",
+        "bedrooms" => "2",
+        "garages" => "1"
       }
     })
     |> render_submit()
 
     assert_patched(
       view,
-      "/properties?bedrooms=2&city=sao-paulo&location_query=Pinheiros%2C+SP&max_price=5000&min_price=2500&state=sp&type=aluguel"
+      "/properties?bedrooms=2&garages=1&location_query=Pinheiros%2C+SP&max_price=2500&min_price=1000&property_type=apartamento&type=aluguel"
     )
+  end
+
+  test "returning to home page / clears filters and resets search form", %{conn: conn} do
+    {:ok, view, _html} =
+      live(conn, "/properties?location_query=Copacabana&type=aluguel&min_price=1000")
+
+    render_patch(view, ~p"/")
+
+    assert render(view) =~ "Encontre o cantinho perfeito"
+    refute render(view) =~ "value=\"Copacabana\""
   end
 
   test "restoring search via handle_params updates form inputs", %{conn: conn} do
@@ -83,7 +95,7 @@ defmodule KfofoWeb.PropertyLiveTest do
       )
 
     view
-    |> form("form", %{
+    |> form("form[phx-submit='search']", %{
       "search" => %{
         "location_query" => "Campo Grande, Rio de Janeiro - RJ, Brasil",
         "state" => "rj",
@@ -98,5 +110,30 @@ defmodule KfofoWeb.PropertyLiveTest do
       view,
       "/properties?city=rio-de-janeiro&location_query=Campo+Grande%2C+Rio+de+Janeiro+-+RJ%2C+Brasil&neighborhood=campo-grande&state=rj&type=venda"
     )
+  end
+
+  test "gracefully handles negative numbers in search params without errors", %{conn: conn} do
+    {:ok, view, _html} =
+      live(conn, "/properties?min_price=-500&max_price=-1000&bedrooms=-2&type=venda")
+
+    assert render(view) =~ "Kfofo"
+  end
+
+  test "changing sort order triggers change_sort event and patches URL", %{conn: conn} do
+    {:ok, view, _html} =
+      live(conn, "/properties?location_query=Copacabana&type=aluguel")
+
+    view
+    |> element("form[phx-change='change_sort']")
+    |> render_change(%{"sort_by" => "price_asc"})
+
+    assert_patched(view, "/properties?location_query=Copacabana&sort_by=price_asc&type=aluguel")
+  end
+
+  test "supports price_desc and recent sort options", %{conn: conn} do
+    {:ok, view, _html} =
+      live(conn, "/properties?location_query=Copacabana&type=aluguel&sort_by=price_desc")
+
+    assert render(view) =~ "Maior valor"
   end
 end

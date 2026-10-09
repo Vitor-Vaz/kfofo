@@ -90,7 +90,7 @@
               <div
                 id="home-location-autocomplete-container"
                 phx-hook="LocationAutocomplete"
-                class="relative sm:col-span-2 lg:col-span-5"
+                class="relative sm:col-span-2 lg:col-span-7"
               >
                 <label class="block text-xs font-medium text-zinc-300 mb-1.5">
                   Localização (Bairro, Cidade ou Estado)
@@ -145,44 +145,125 @@
                 <% end %>
               </div>
               
+<!-- Property Type -->
+              <div class="sm:col-span-2 lg:col-span-5">
+                <label class="block text-xs font-medium text-zinc-300 mb-1.5">
+                  Tipo de Imóvel
+                </label>
+                <select
+                  name="search[property_type]"
+                  class="w-full rounded-xl bg-zinc-950/80 border border-zinc-700/80 text-white font-normal not-italic px-3.5 py-3 text-sm focus:border-orange-500 focus:ring-orange-500 focus:outline-none transition"
+                >
+                  <option value="" selected={@search_form["property_type"] in ["", nil]}>
+                    Todos os tipos
+                  </option>
+                  <option
+                    value="apartamento"
+                    selected={@search_form["property_type"] in ["apartamento", "apartamentos"]}
+                  >
+                    Apartamento
+                  </option>
+                  <option
+                    value="casa"
+                    selected={@search_form["property_type"] in ["casa", "casas"]}
+                  >
+                    Casa
+                  </option>
+                  <option
+                    value="quarto"
+                    selected={@search_form["property_type"] in ["quarto", "quartos"]}
+                  >
+                    Quarto
+                  </option>
+                </select>
+              </div>
+              
 <!-- Price Min -->
-              <div class="lg:col-span-2">
+              <div class="lg:col-span-3">
                 <label class="block text-xs font-medium text-zinc-300 mb-1.5">
                   Preço Mín. (R$)
                 </label>
                 <input
                   type="number"
+                  min="0"
                   name="search[min_price]"
                   value={@search_form["min_price"]}
-                  placeholder="Ex: 200.000"
-                  class="w-full rounded-xl bg-zinc-950/80 border border-zinc-700/80 text-white font-normal not-italic placeholder:italic placeholder:font-normal placeholder:text-zinc-500 px-3.5 py-3 text-sm focus:border-orange-500 focus:ring-orange-500 focus:outline-none transition"
+                  placeholder="Ex: 400"
+                  class="w-full rounded-xl bg-zinc-950/80 border border-zinc-700/80 text-white font-normal not-italic placeholder:italic placeholder:font-normal placeholder:text-zinc-500 px-3.5 py-3 text-sm focus:border-orange-500 focus:ring-orange-500 focus:outline-none transition [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
               </div>
               
 <!-- Price Max -->
-              <div class="lg:col-span-2">
+              <div class="lg:col-span-3">
                 <label class="block text-xs font-medium text-zinc-300 mb-1.5">
                   Preço Máx. (R$)
                 </label>
                 <input
                   type="number"
+                  min="0"
                   name="search[max_price]"
                   value={@search_form["max_price"]}
-                  placeholder="Ex: 800.000"
-                  class="w-full rounded-xl bg-zinc-950/80 border border-zinc-700/80 text-white font-normal not-italic placeholder:italic placeholder:font-normal placeholder:text-zinc-500 px-3.5 py-3 text-sm focus:border-orange-500 focus:ring-orange-500 focus:outline-none transition"
+                  placeholder="Ex: 2.000"
+                  class="w-full rounded-xl bg-zinc-950/80 border border-zinc-700/80 text-white font-normal not-italic placeholder:italic placeholder:font-normal placeholder:text-zinc-500 px-3.5 py-3 text-sm focus:border-orange-500 focus:ring-orange-500 focus:outline-none transition [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
               </div>
               
 <!-- Bedrooms -->
               <div class="lg:col-span-3">
                 <label class="block text-xs font-medium text-zinc-300 mb-1.5">Quartos Mín.</label>
-                <input
-                  type="number"
+                <select
                   name="search[bedrooms]"
-                  value={@search_form["bedrooms"]}
-                  placeholder="Ex: 2 quartos"
-                  class="w-full rounded-xl bg-zinc-950/80 border border-zinc-700/80 text-white font-normal not-italic placeholder:italic placeholder:font-normal placeholder:text-zinc-500 px-3.5 py-3 text-sm focus:border-orange-500 focus:ring-orange-500 focus:outline-none transition"
-                />
+                  class="w-full rounded-xl bg-zinc-950/80 border border-zinc-700/80 text-white font-normal not-italic px-3.5 py-3 text-sm focus:border-orange-500 focus:ring-orange-500 focus:outline-none transition"
+                >
+                  <option value="" selected={@search_form["bedrooms"] in ["", nil]}>
+                    Qualquer
+                  </option>
+                  <option value="1" selected={to_string(@search_form["bedrooms"]) == "1"}>
+                    1 quarto
+                  </option>
+                  <option value="2" selected={to_string(@search_form["bedrooms"]) == "2"}>
+                    2 quartos
+                  </option>
+                  <option value="3" selected={to_string(@search_form["bedrooms"]) == "3"}>
+                    3 quartos
+                  </option>
+                  <option value="4" selected={to_string(@search_form["bedrooms"]) == "4"}>
+                    4 quartos
+                  </option>
+                  <option value="5" selected={to_string(@search_form["bedrooms"]) == "5"}>
+                    5+ quartos
+                  </option>
+                </select>
+              </div>
+              
+<!-- Garages -->
+              <div class="lg:col-span-3">
+                <label class="block text-xs font-medium text-zinc-300 mb-1.5">
+                  Vagas de Garagem
+                </label>
+                <select
+                  name="search[garages]"
+                  class="w-full rounded-xl bg-zinc-950/80 border border-zinc-700/80 text-white font-normal not-italic px-3.5 py-3 text-sm focus:border-orange-500 focus:ring-orange-500 focus:outline-none transition"
+                >
+                  <option value="" selected={@search_form["garages"] in ["", nil]}>
+                    Qualquer
+                  </option>
+                  <option value="1" selected={to_string(@search_form["garages"]) == "1"}>
+                    1 vaga
+                  </option>
+                  <option value="2" selected={to_string(@search_form["garages"]) == "2"}>
+                    2 vagas
+                  </option>
+                  <option value="3" selected={to_string(@search_form["garages"]) == "3"}>
+                    3 vagas
+                  </option>
+                  <option value="4" selected={to_string(@search_form["garages"]) == "4"}>
+                    4 vagas
+                  </option>
+                  <option value="5" selected={to_string(@search_form["garages"]) == "5"}>
+                    5+ vagas
+                  </option>
+                </select>
               </div>
             </div>
             
@@ -437,6 +518,39 @@
                   </select>
                 </div>
                 
+<!-- Property Type -->
+                <div>
+                  <label class="block text-xs font-medium text-zinc-300 mb-1.5">
+                    Tipo de Imóvel
+                  </label>
+                  <select
+                    name="search[property_type]"
+                    class="w-full rounded-xl bg-zinc-950/80 border border-zinc-700/80 text-white font-normal not-italic px-3 py-2.5 text-xs focus:border-orange-500 focus:ring-orange-500 focus:outline-none transition"
+                  >
+                    <option value="" selected={@search_form["property_type"] in ["", nil]}>
+                      Todos os tipos
+                    </option>
+                    <option
+                      value="apartamento"
+                      selected={@search_form["property_type"] in ["apartamento", "apartamentos"]}
+                    >
+                      Apartamento
+                    </option>
+                    <option
+                      value="casa"
+                      selected={@search_form["property_type"] in ["casa", "casas"]}
+                    >
+                      Casa
+                    </option>
+                    <option
+                      value="quarto"
+                      selected={@search_form["property_type"] in ["quarto", "quartos"]}
+                    >
+                      Quarto
+                    </option>
+                  </select>
+                </div>
+                
 <!-- Price Range -->
                 <div class="grid grid-cols-2 gap-2">
                   <div>
@@ -445,10 +559,11 @@
                     </label>
                     <input
                       type="number"
+                      min="0"
                       name="search[min_price]"
                       value={@search_form["min_price"]}
                       placeholder="R$ Mín"
-                      class="w-full rounded-xl bg-zinc-950/80 border border-zinc-700/80 text-white font-normal not-italic placeholder:italic placeholder:font-normal placeholder:text-zinc-500 px-3 py-2.5 text-xs focus:border-orange-500 focus:ring-orange-500 focus:outline-none transition"
+                      class="w-full rounded-xl bg-zinc-950/80 border border-zinc-700/80 text-white font-normal not-italic placeholder:italic placeholder:font-normal placeholder:text-zinc-500 px-3 py-2.5 text-xs focus:border-orange-500 focus:ring-orange-500 focus:outline-none transition [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                   <div>
@@ -457,26 +572,73 @@
                     </label>
                     <input
                       type="number"
+                      min="0"
                       name="search[max_price]"
                       value={@search_form["max_price"]}
                       placeholder="R$ Máx"
-                      class="w-full rounded-xl bg-zinc-950/80 border border-zinc-700/80 text-white font-normal not-italic placeholder:italic placeholder:font-normal placeholder:text-zinc-500 px-3 py-2.5 text-xs focus:border-orange-500 focus:ring-orange-500 focus:outline-none transition"
+                      class="w-full rounded-xl bg-zinc-950/80 border border-zinc-700/80 text-white font-normal not-italic placeholder:italic placeholder:font-normal placeholder:text-zinc-500 px-3 py-2.5 text-xs focus:border-orange-500 focus:ring-orange-500 focus:outline-none transition [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                 </div>
                 
-<!-- Bedrooms -->
-                <div>
-                  <label class="block text-xs font-medium text-zinc-300 mb-1.5">
-                    Quartos Mínimos
-                  </label>
-                  <input
-                    type="number"
-                    name="search[bedrooms]"
-                    value={@search_form["bedrooms"]}
-                    placeholder="Ex: 2"
-                    class="w-full rounded-xl bg-zinc-950/80 border border-zinc-700/80 text-white font-normal not-italic placeholder:italic placeholder:font-normal placeholder:text-zinc-500 px-3 py-2.5 text-xs focus:border-orange-500 focus:ring-orange-500 focus:outline-none transition"
-                  />
+<!-- Bedrooms & Garages -->
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-xs font-medium text-zinc-300 mb-1.5">
+                      Quartos
+                    </label>
+                    <select
+                      name="search[bedrooms]"
+                      class="w-full rounded-xl bg-zinc-950/80 border border-zinc-700/80 text-white font-normal not-italic px-3 py-2.5 text-xs focus:border-orange-500 focus:ring-orange-500 focus:outline-none transition"
+                    >
+                      <option value="" selected={@search_form["bedrooms"] in ["", nil]}>
+                        Qualquer
+                      </option>
+                      <option value="1" selected={to_string(@search_form["bedrooms"]) == "1"}>
+                        1 quarto
+                      </option>
+                      <option value="2" selected={to_string(@search_form["bedrooms"]) == "2"}>
+                        2 quartos
+                      </option>
+                      <option value="3" selected={to_string(@search_form["bedrooms"]) == "3"}>
+                        3 quartos
+                      </option>
+                      <option value="4" selected={to_string(@search_form["bedrooms"]) == "4"}>
+                        4 quartos
+                      </option>
+                      <option value="5" selected={to_string(@search_form["bedrooms"]) == "5"}>
+                        5+ quartos
+                      </option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-medium text-zinc-300 mb-1.5">
+                      Vagas
+                    </label>
+                    <select
+                      name="search[garages]"
+                      class="w-full rounded-xl bg-zinc-950/80 border border-zinc-700/80 text-white font-normal not-italic px-3 py-2.5 text-xs focus:border-orange-500 focus:ring-orange-500 focus:outline-none transition"
+                    >
+                      <option value="" selected={@search_form["garages"] in ["", nil]}>
+                        Qualquer
+                      </option>
+                      <option value="1" selected={to_string(@search_form["garages"]) == "1"}>
+                        1 vaga
+                      </option>
+                      <option value="2" selected={to_string(@search_form["garages"]) == "2"}>
+                        2 vagas
+                      </option>
+                      <option value="3" selected={to_string(@search_form["garages"]) == "3"}>
+                        3 vagas
+                      </option>
+                      <option value="4" selected={to_string(@search_form["garages"]) == "4"}>
+                        4 vagas
+                      </option>
+                      <option value="5" selected={to_string(@search_form["garages"]) == "5"}>
+                        5+ vagas
+                      </option>
+                    </select>
+                  </div>
                 </div>
                 
 <!-- Submit Button -->
@@ -520,7 +682,7 @@
 <!-- ================= RIGHT RESULTS CONTENT ================= -->
           <main class="lg:col-span-8 xl:col-span-9 2xl:col-span-9 space-y-6">
             <!-- Results Header -->
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-zinc-800/80">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-800/80">
               <div>
                 <h1 class="text-xl font-bold text-white tracking-tight">
                   Imóveis para {if @search_form["type"] == "aluguel",
@@ -532,17 +694,70 @@
                     </span>
                   <% end %>
                 </h1>
-                <p class="text-xs text-zinc-400 mt-0.5">
+                <p class="text-xs text-zinc-400 mt-1">
                   Resultados agregados e atualizados em tempo real
                 </p>
               </div>
-
-              <%= if !@loading do %>
-                <div class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-300">
-                  <span class="w-2 h-2 rounded-full bg-orange-500"></span>
-                  <span>{@total} {if @total == 1, do: "imóvel", else: "imóveis"}</span>
+              
+<!-- Controls: Total on the left, Sort on the right -->
+              <div class="flex items-center gap-3 self-start sm:self-center">
+                <!-- Total Counter Badge (on the left of sort) -->
+                <div
+                  id="results-total-badge"
+                  phx-hook="FadeCounter"
+                  class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 shadow-sm"
+                >
+                  <span class={"w-2 h-2 rounded-full bg-orange-500 #{if @loading, do: "animate-pulse", else: ""}"}>
+                  </span>
+                  <span id="counter-value" class="text-zinc-200 animate-fade-in">
+                    <%= if @loading do %>
+                      Buscando...
+                    <% else %>
+                      {@total} {if @total == 1, do: "imóvel", else: "imóveis"}
+                    <% end %>
+                  </span>
                 </div>
-              <% end %>
+                
+<!-- Sort Selector (on the right) -->
+                <form
+                  phx-change="change_sort"
+                  class="inline-flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-1.5 shadow-sm"
+                >
+                  <label
+                    for="sort-select"
+                    class="text-xs font-medium text-zinc-400 whitespace-nowrap"
+                  >
+                    ↕️ Ordenar por:
+                  </label>
+                  <select
+                    id="sort-select"
+                    name="sort_by"
+                    class="bg-transparent text-white text-xs font-semibold border-none focus:ring-0 focus:outline-none py-0.5 pr-6 pl-1 cursor-pointer"
+                  >
+                    <option
+                      value="recent"
+                      selected={@sort_by in ["recent", "", nil]}
+                      class="bg-zinc-900 text-white"
+                    >
+                      Mais recentes
+                    </option>
+                    <option
+                      value="price_asc"
+                      selected={@sort_by == "price_asc"}
+                      class="bg-zinc-900 text-white"
+                    >
+                      Menor valor
+                    </option>
+                    <option
+                      value="price_desc"
+                      selected={@sort_by == "price_desc"}
+                      class="bg-zinc-900 text-white"
+                    >
+                      Maior valor
+                    </option>
+                  </select>
+                </form>
+              </div>
             </div>
             
 <!-- Error Banner -->
@@ -583,7 +798,7 @@
                 <!-- Property Cards Grid (4 per row on 2xl) -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5">
                   <%= for property <- @properties do %>
-                    <div class="group rounded-3xl border border-zinc-800/80 bg-zinc-900/90 overflow-hidden shadow-xl hover:shadow-2xl hover:border-zinc-700 transition duration-300 flex flex-col justify-between">
+                    <div class="group rounded-3xl border border-zinc-800/80 bg-zinc-900/90 overflow-hidden shadow-xl hover:shadow-2xl hover:border-zinc-700/90 transition-all duration-300 ease-out hover:scale-[1.015] hover:-translate-y-0.5 flex flex-col justify-between">
                       <div>
                         <div
                           id={"carousel-#{property.external_id}"}

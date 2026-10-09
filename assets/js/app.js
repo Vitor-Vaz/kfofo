@@ -113,6 +113,19 @@ Hooks.SearchPersistence = {
       } catch (_e) {}
     })
 
+    this.handleEvent("clear_saved_search", () => {
+      try {
+        localStorage.removeItem("kfofo_search_filters")
+      } catch (_e) {}
+    })
+
+    const isHomeRoute = window.location.pathname === "/"
+    if (isHomeRoute) {
+      try {
+        localStorage.removeItem("kfofo_search_filters")
+      } catch (_e) {}
+    }
+
     const isPropertiesRoute = window.location.pathname.startsWith("/properties")
     const urlParams = new URLSearchParams(window.location.search)
     const hasSearchParams = urlParams.has("location_query") || urlParams.has("city") || urlParams.has("state") || urlParams.has("type")
@@ -241,6 +254,17 @@ Hooks.LocationAutocomplete = {
         item.classList.add("border-transparent", "pl-4")
       }
     })
+  }
+}
+
+Hooks.FadeCounter = {
+  updated() {
+    const valueEl = this.el.querySelector("#counter-value")
+    if (valueEl) {
+      valueEl.classList.remove("animate-fade-in")
+      void valueEl.offsetWidth
+      valueEl.classList.add("animate-fade-in")
+    }
   }
 }
 
