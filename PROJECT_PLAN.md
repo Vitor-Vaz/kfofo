@@ -20,8 +20,8 @@ O **kfofo** é um agregador inteligente de anúncios de imóveis (casas e aparta
 ## 🗺️ Roadmap de Integração de Marketplaces
 
 1. **Fase 1 (Inicial)**: 🟢 **OLX** (Conector funcional e extração ativa).
-2. **Fase 2**: 🟡 **Zap Imóveis**.
-3. **Fase 3**: 🟠 **QuintoAndar**.
+2. **Fase 2**: 🟢 **QuintoAndar** (Conector funcional, parser SSR Next.js e agregação paralela ativa).
+3. **Fase 3**: 🟡 **Zap Imóveis**.
 4. **Fase 4**: 🔴 **Imovelweb**.
 
 ---
@@ -54,8 +54,8 @@ O **kfofo** é um agregador inteligente de anúncios de imóveis (casas e aparta
   - **Botão de Detalhes & Página Interna do Imóvel (`/properties/:id`)**:
     - Cada card terá botão dedicado de "Detalhes" abrindo a ficha completa do imóvel (galeria em alta resolução, ficha técnica com condomínio/IPTU, descrição completa e link de origem).
 - **Expansão de Marketplaces (Novos Scrapers)**:
-  - 🟡 **Zap Imóveis** (Fase 2).
-  - 🟠 **QuintoAndar** (Fase 3).
+  - 🟢 **QuintoAndar** (Parser Next.js SSR + extração de galeria e normalização multi-portal).
+  - 🟡 **Zap Imóveis** (Fase 3).
   - 🔴 **Imovelweb** (Fase 4).
 - **Refinamento de Scraping / Filtro de Região e Cidade (Ex: Nova Iguaçu, São João de Meriti, Resende / RJ)**:
   - Mapear e normalizar a hierarquia de mesorregiões e municípios da OLX para estados como RJ e SP (ex: Baixada/Metropolitana `/rio-de-janeiro-e-regiao/nova-iguacu`, Sul Fluminense `/serra-angra-dos-reis-e-regiao/resende`, Região dos Lagos, etc.) ou aplicar query param de busca direta por cidade (`q=...`), evitando que a OLX receba rotas sem a mesorregião e redirecione para anúncios genéricos da capital.
@@ -85,6 +85,8 @@ O **kfofo** é um agregador inteligente de anúncios de imóveis (casas e aparta
 | :--- | :--- | :---: | :---: |
 | **Setup Base** | Setup Elixir + Phoenix LiveView + Tailwind + PostgreSQL | - | 🟢 **Concluído** |
 | **Scraper OLX** | Conector OLX com bypass TLS e parser Floki | - | 🟢 **Concluído** |
+| **Scraper QuintoAndar** | Conector QuintoAndar com parser SSR Next.js e fotos em HD | 🟡 Médio Prazo | 🟢 **Concluído** |
+| **Agregador Multi-Portal** | Busca concorrente assíncrona (`Task.await_many`) e deduplicação | 🟡 Médio Prazo | 🟢 **Concluído** |
 | **Busca de Local** | Autocomplete preditivo (Google Places API New) com Bairro | - | 🟢 **Concluído** |
 | **Carrossel & Imagens** | Carregamento total e animação de slide lateral | ⚡ Imediato | 🟢 **Concluído** |
 | **Escala dos Cards** | Ampliação lateral dos cards (pelo menos 80% da tela) | ⚡ Imediato | 🟢 **Concluído** |
@@ -98,6 +100,6 @@ O **kfofo** é um agregador inteligente de anúncios de imóveis (casas e aparta
 | **Ordenação Resultados**| Ordenar por menor preço, maior preço e mais recentes | 🟡 Médio Prazo | 🟢 **Concluído** |
 | **Filtros Adicionais** | Filtro de Tipo de Imóvel (apto/casa/quarto) e Vagas (1 a 5+) | 🟡 Médio Prazo | 🟢 **Concluído** |
 | **Página de Detalhes**| Página interna de anúncio com ficha e galeria completa | 🟡 Médio Prazo | ⏳ *Planejado* |
-| **Novos Portais** | Integrações com Zap Imóveis, QuintoAndar e Imovelweb | 🟡 Médio Prazo | ⏳ *Planejado* |
+| **Novos Portais (Zap/Imovelweb)** | Integrações com Zap Imóveis e Imovelweb | 🟡 Médio Prazo | ⏳ *Planejado* |
 | **Top Buscas Dinâmicas**| Tabela de analytics para alimentar sugestões rápidas em alta | 🔵 Longo Prazo | ⏳ *Planejado* |
 | **Auth & Alertas** | Google OAuth2 e notificações de novos imóveis | 🔵 Longo Prazo | ⏳ *Planejado* |

@@ -831,8 +831,8 @@
                           </div>
                           
 <!-- Portal Badge -->
-                          <div class="absolute top-2.5 left-2.5 z-20 bg-orange-600 text-white px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider shadow-md pointer-events-none">
-                            OLX
+                          <div class={"absolute top-2.5 left-2.5 z-20 #{source_badge_class(property.source)} text-white px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider shadow-md pointer-events-none"}>
+                            {source_portal_name(property.source)}
                           </div>
 
                           <%= if length(property_images(property.images)) > 1 do %>
@@ -909,10 +909,10 @@
                           <div class="text-xs text-zinc-400 mb-3 flex items-center gap-1.5 truncate">
                             <span class="text-orange-400 flex-shrink-0">📍</span>
                             <span class="truncate">
-                              {property.location.neighborhood || property.location.city ||
+                              {property.location[:neighborhood] || property.location[:city] ||
                                 "Localização não informada"}
-                              <%= if property.location.state do %>
-                                , {property.location.state}
+                              <%= if property.location[:state] do %>
+                                , {property.location[:state]}
                               <% end %>
                             </span>
                           </div>
@@ -920,27 +920,28 @@
                           <div class="grid grid-cols-4 gap-1 py-2 border-y border-zinc-800/80 text-center text-xs text-zinc-300 mb-3 bg-zinc-950/40 rounded-xl">
                             <div>
                               <div class="font-bold text-white text-xs">
-                                {property.details.bedrooms || "-"}
+                                {property.details[:bedrooms] || property.details[:rooms] || "-"}
                               </div>
                               <div class="text-[9px] text-zinc-500">Quartos</div>
                             </div>
                             <div>
                               <div class="font-bold text-white text-xs">
-                                {property.details.bathrooms || "-"}
+                                {property.details[:bathrooms] || "-"}
                               </div>
                               <div class="text-[9px] text-zinc-500">Banh.</div>
                             </div>
                             <div>
                               <div class="font-bold text-white text-xs">
-                                {property.details.garage_spaces || "-"}
+                                {property.details[:garage_spaces] || "-"}
                               </div>
                               <div class="text-[9px] text-zinc-500">Vagas</div>
                             </div>
                             <div>
                               <div class="font-bold text-white text-xs">
-                                {if property.details.area_sqm,
-                                  do: "#{property.details.area_sqm}m²",
-                                  else: "-"}
+                                {case property.details[:area_sqm] || property.details[:area_m2] do
+                                  nil -> "-"
+                                  area -> "#{area}m²"
+                                end}
                               </div>
                               <div class="text-[9px] text-zinc-500">Área</div>
                             </div>
@@ -954,9 +955,9 @@
                             href={property.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            class="block w-full text-center rounded-xl bg-zinc-800 hover:bg-orange-600 hover:text-white py-2 text-xs font-semibold text-zinc-200 border border-zinc-700/60 transition shadow-sm"
+                            class={"block w-full text-center rounded-xl bg-zinc-800 #{source_button_hover_class(property.source)} hover:text-white py-2 text-xs font-semibold text-zinc-200 border border-zinc-700/60 transition shadow-sm"}
                           >
-                            Ver no site da OLX ↗
+                            Ver no site do {source_portal_name(property.source)} ↗
                           </a>
                         <% end %>
                       </div>
