@@ -65,7 +65,7 @@ defmodule Kfofo.Scrapers.Olx.Client do
         {:ok, body}
 
       _ ->
-        case Req.get(url, headers: headers, retry: :safe_transient) do
+        case Req.get(url, headers: headers, receive_timeout: 8_000, retry: false) do
           {:ok, %Req.Response{status: 200, body: body}} ->
             {:ok, body}
 

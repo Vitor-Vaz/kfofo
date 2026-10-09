@@ -52,23 +52,15 @@ defmodule Kfofo.Scrapers.QuintoAndar.Client do
   end
 
   defp default_fetch(url, headers) do
-    script_path = Path.join(:code.priv_dir(:kfofo), "scrapers/fetch_olx.mjs")
-
-    case System.cmd("node", [script_path, url], stderr_to_stdout: false) do
-      {body, 0} when is_binary(body) and byte_size(body) > 0 ->
+    case Req.get(url, headers: headers, receive_timeout: 8_000, retry: false) do
+      {:ok, %Req.Response{status: 200, body: body}} ->
         {:ok, body}
 
-      _ ->
-        case Req.get(url, headers: headers, retry: :safe_transient) do
-          {:ok, %Req.Response{status: 200, body: body}} ->
-            {:ok, body}
+      {:ok, %Req.Response{status: status}} ->
+        {:error, {:http_error, status}}
 
-          {:ok, %Req.Response{status: status}} ->
-            {:error, {:http_error, status}}
-
-          {:error, reason} ->
-            {:error, {:network_error, reason}}
-        end
+      {:error, reason} ->
+        {:error, {:network_error, reason}}
     end
   end
 
@@ -204,11 +196,20 @@ defmodule Kfofo.Scrapers.QuintoAndar.Client do
   defp normalize_opts(opts), do: opts
 
   defp config_val(key) do
-    :kfofo
-    |> Application.get_env(:quintoandar_scraper, [])
-    |> Keyword.get(key, default_config(key))
+    case Application.get_env(:kfofo, :quintoandar_scraper, []) do
+      nil -> default_config(key)
+      opts when is_list(opts) -> Keyword.get(opts, key, default_config(key))
+      _ -> default_config(key)
+    end
   end
 
-  defp default_config(:base_url), do: System.get_env("QUINTOANDAR_BASE_URL") || ""
+  defp default_config(:base_url) do
+    case System.get_env("QUINTOANDAR_BASE_URL") do
+      nil -> "https://www.quintoandar.com.br"
+      "" -> "https://www.quintoandar.com.br"
+      url -> url
+    end
+  end
+
   defp default_config(_), do: nil
 end

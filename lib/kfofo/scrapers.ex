@@ -46,18 +46,36 @@ defmodule Kfofo.Scrapers do
     tasks =
       Enum.map(scrapers, fn {name, fetch_fn} ->
         Task.async(fn ->
-          case fetch_fn.(opts) do
-            {:ok, %{properties: props}} -> {name, {:ok, props}}
-            {:error, reason} -> {name, {:error, reason}}
-            _ -> {name, {:error, :unknown_error}}
+          try do
+            case fetch_fn.(opts) do
+              {:ok, %{properties: props}} -> {name, {:ok, props}}
+              {:error, reason} -> {name, {:error, reason}}
+              _ -> {name, {:error, :unknown_error}}
+            end
+          rescue
+            e -> {name, {:error, {:exception, Exception.message(e)}}}
+          catch
+            kind, reason -> {name, {:error, {:caught, {kind, reason}}}}
           end
         end)
       end)
 
+    yielded_results = Task.yield_many(tasks, 12_000)
+
     results =
-      tasks
-      |> Task.await_many(15_000)
-      |> Enum.map(fn {_name, res} -> res end)
+      Enum.map(yielded_results, fn {task, res} ->
+        case res do
+          {:ok, {_name, outcome}} ->
+            outcome
+
+          nil ->
+            Task.shutdown(task, :brutal_kill)
+            {:error, :timeout}
+
+          {:exit, reason} ->
+            {:error, {:exit, reason}}
+        end
+      end)
 
     property_lists =
       Enum.map(results, fn
