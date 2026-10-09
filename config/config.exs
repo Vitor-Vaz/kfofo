@@ -44,6 +44,9 @@ config :phoenix, :json_library, Jason
 
 config :kfofo, :olx_scraper, base_url: System.get_env("OLX_BASE_URL") || "https://www.olx.com.br"
 
+config :kfofo, :quintoandar_scraper,
+  base_url: System.get_env("QUINTOANDAR_BASE_URL") || "https://www.quintoandar.com.br"
+
 config :kfofo, :google_maps, api_key: System.get_env("GOOGLE_MAPS_API_KEY")
 
 import_config "#{config_env()}.exs"

@@ -2,7 +2,7 @@ defmodule KfofoWeb.PropertyLive.Index do
   use KfofoWeb, :live_view
 
   alias Kfofo.Locations
-  alias Kfofo.Scrapers.Olx
+  alias Kfofo.Scrapers
 
   @search_keys [
     "location_query",
@@ -78,20 +78,51 @@ defmodule KfofoWeb.PropertyLive.Index do
     push_patch(socket, to: ~p"/properties?#{query_params}")
   end
 
+  @fetch_filter_keys [
+    "location_query",
+    "state",
+    "city",
+    "neighborhood",
+    "type",
+    "property_type",
+    "min_price",
+    "max_price",
+    "bedrooms",
+    "garages"
+  ]
+
   defp apply_action(socket, :results, search_params) do
     merged_form = Map.merge(@default_search_form, search_params)
     sort_by = Map.get(merged_form, "sort_by", "recent")
 
-    socket
-    |> assign(:page_title, "Resultados da Busca · Kfofo")
-    |> assign(:search_form, merged_form)
-    |> assign(:sort_by, sort_by)
-    |> assign(:loading, true)
-    |> assign(:searched, true)
-    |> assign(:error_message, nil)
-    |> assign(:show_predictions, false)
-    |> push_event("save_search", merged_form)
-    |> start_async_fetch(merged_form)
+    prev_fetch_filters = Map.take(socket.assigns[:search_form] || %{}, @fetch_filter_keys)
+    new_fetch_filters = Map.take(merged_form, @fetch_filter_keys)
+    prev_sort = socket.assigns[:sort_by] || "recent"
+    raw_props = socket.assigns[:raw_properties] || []
+
+    case prev_fetch_filters == new_fetch_filters and prev_sort != sort_by and raw_props != [] do
+      true ->
+        sorted = sort_properties(raw_props, sort_by)
+
+        socket
+        |> assign(:page_title, "Resultados da Busca · Kfofo")
+        |> assign(:search_form, merged_form)
+        |> assign(:sort_by, sort_by)
+        |> assign(:properties, sorted)
+        |> push_event("save_search", merged_form)
+
+      false ->
+        socket
+        |> assign(:page_title, "Resultados da Busca · Kfofo")
+        |> assign(:search_form, merged_form)
+        |> assign(:sort_by, sort_by)
+        |> assign(:loading, true)
+        |> assign(:searched, true)
+        |> assign(:error_message, nil)
+        |> assign(:show_predictions, false)
+        |> push_event("save_search", merged_form)
+        |> start_async_fetch(merged_form)
+    end
   end
 
   @impl true
@@ -203,7 +234,13 @@ defmodule KfofoWeb.PropertyLive.Index do
           |> assign(:show_predictions, false)
       end
 
-    updated_form = Map.put(socket.assigns.search_form, "location_query", query)
+    updated_form =
+      socket.assigns.search_form
+      |> Map.put("location_query", query)
+      |> Map.put("state", "")
+      |> Map.put("city", "")
+      |> Map.put("neighborhood", "")
+
     {:noreply, assign(socket, :search_form, updated_form)}
   end
 
@@ -248,13 +285,40 @@ defmodule KfofoWeb.PropertyLive.Index do
   def handle_event("search", %{"search" => params}, socket) do
     form_params = Map.take(params, @search_keys)
     merged_params = Map.merge(@default_search_form, form_params)
+
+    merged_params =
+      case merged_params["location_query"] != (socket.assigns.search_form["location_query"] || "") do
+        true ->
+          merged_params
+          |> Map.put("state", "")
+          |> Map.put("city", "")
+          |> Map.put("neighborhood", "")
+
+        false ->
+          merged_params
+      end
+
     query_params = clean_params(merged_params)
+    current_query_params = clean_params(socket.assigns.search_form)
 
     socket =
-      socket
-      |> assign(:search_form, merged_params)
-      |> push_event("save_search", merged_params)
-      |> push_patch(to: ~p"/properties?#{query_params}")
+      case query_params == current_query_params and socket.assigns.live_action == :results do
+        true ->
+          socket
+          |> assign(:loading, true)
+          |> assign(:searched, true)
+          |> assign(:error_message, nil)
+          |> assign(:show_predictions, false)
+          |> push_event("save_search", merged_params)
+          |> push_patch(to: ~p"/properties?#{query_params}")
+          |> start_async_fetch(merged_params)
+
+        false ->
+          socket
+          |> assign(:show_predictions, false)
+          |> push_event("save_search", merged_params)
+          |> push_patch(to: ~p"/properties?#{query_params}")
+      end
 
     {:noreply, socket}
   end
@@ -286,7 +350,7 @@ defmodule KfofoWeb.PropertyLive.Index do
   end
 
   @impl true
-  def handle_async(:fetch_olx, {:ok, {:ok, result}}, socket) do
+  def handle_async(:fetch_properties, {:ok, {:ok, result}}, socket) do
     sort_by = socket.assigns[:sort_by] || "recent"
     sorted_properties = sort_properties(result.properties, sort_by)
 
@@ -301,7 +365,7 @@ defmodule KfofoWeb.PropertyLive.Index do
   end
 
   @impl true
-  def handle_async(:fetch_olx, {:ok, {:error, reason}}, socket) do
+  def handle_async(:fetch_properties, {:ok, {:error, reason}}, socket) do
     socket =
       socket
       |> assign(:loading, false)
@@ -313,13 +377,16 @@ defmodule KfofoWeb.PropertyLive.Index do
   end
 
   @impl true
-  def handle_async(:fetch_olx, {:exit, _reason}, socket) do
+  def handle_async(:fetch_properties, {:exit, _reason}, socket) do
     socket =
       socket
       |> assign(:loading, false)
       |> assign(:properties, [])
       |> assign(:total, 0)
-      |> assign(:error_message, "Ocorreu uma falha inesperada ao conectar com a OLX.")
+      |> assign(
+        :error_message,
+        "Ocorreu uma falha inesperada ao conectar com os portais de imóveis."
+      )
 
     {:noreply, socket}
   end
@@ -327,8 +394,8 @@ defmodule KfofoWeb.PropertyLive.Index do
   defp start_async_fetch(socket, params) do
     search_opts = parse_search_opts(params)
 
-    start_async(socket, :fetch_olx, fn ->
-      Olx.fetch_properties(search_opts)
+    start_async(socket, :fetch_properties, fn ->
+      Scrapers.fetch_all_properties(search_opts)
     end)
   end
 
@@ -493,6 +560,17 @@ defmodule KfofoWeb.PropertyLive.Index do
   end
 
   def property_images(_), do: [fallback_image()]
+
+  def source_portal_name("quintoandar"), do: "QuintoAndar"
+  def source_portal_name("olx"), do: "OLX"
+  def source_portal_name(other) when is_binary(other), do: String.capitalize(other)
+  def source_portal_name(_), do: "Anunciante"
+
+  def source_button_hover_class("quintoandar"), do: "hover:bg-blue-600 hover:border-blue-500"
+  def source_button_hover_class(_), do: "hover:bg-orange-600 hover:border-orange-500"
+
+  def source_badge_class("quintoandar"), do: "bg-blue-600"
+  def source_badge_class(_), do: "bg-orange-600"
 
   def fallback_image,
     do:
