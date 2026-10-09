@@ -3,19 +3,21 @@ defmodule KfofoWeb.PropertyLiveTest do
 
   import Phoenix.LiveViewTest
 
-  test "renders search page at root / and /properties with Kfofo branding and without phoenix header",
+  test "renders search page at root / with Hero search and /properties with split results layout",
        %{conn: conn} do
     {:ok, view, html} = live(conn, "/")
 
     assert html =~ "Kfofo"
-    assert html =~ "Encontre o seu cantinho ideal"
+    assert html =~ "Encontre o cantinho perfeito para chamar de"
     assert html =~ "SearchPersistence"
     refute html =~ "@elixirphoenix"
     refute html =~ "Peace of mind from prototype to production"
     assert render(view) =~ "Localização (Bairro, Cidade ou Estado)"
 
-    {:ok, _view, html_prop} = live(conn, "/properties")
+    {:ok, view_prop, html_prop} = live(conn, "/properties")
     assert html_prop =~ "Kfofo"
+    assert render(view_prop) =~ "Filtros de Busca"
+    assert render(view_prop) =~ "Resultados agregados e atualizados em tempo real"
   end
 
   test "triggers location suggestions via suggest_locations event", %{conn: conn} do

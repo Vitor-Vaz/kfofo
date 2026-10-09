@@ -47,26 +47,76 @@ defmodule KfofoWeb.PropertyLive.Index do
   @impl true
   def handle_params(params, _uri, socket) do
     search_params = Map.take(params, @search_keys)
+    {:noreply, apply_action(socket, socket.assigns.live_action, search_params)}
+  end
 
-    case map_size(search_params) > 0 do
-      true ->
-        merged_form = Map.merge(socket.assigns.search_form, search_params)
+  defp apply_action(socket, :home, search_params) when search_params == %{} do
+    socket
+    |> assign(:page_title, "Kfofo - Encontre o seu novo lar")
+    |> assign(:show_predictions, false)
+  end
 
-        socket =
-          socket
-          |> assign(:search_form, merged_form)
-          |> assign(:loading, true)
-          |> assign(:searched, true)
-          |> assign(:error_message, nil)
-          |> assign(:show_predictions, false)
-          |> push_event("save_search", merged_form)
-          |> start_async_fetch(merged_form)
+  defp apply_action(socket, :home, search_params) do
+    query_params = clean_params(search_params)
+    push_patch(socket, to: ~p"/properties?#{query_params}")
+  end
 
-        {:noreply, socket}
+  defp apply_action(socket, :results, search_params) do
+    merged_form = Map.merge(@default_search_form, search_params)
 
-      false ->
-        {:noreply, socket}
-    end
+    socket
+    |> assign(:page_title, "Resultados da Busca · Kfofo")
+    |> assign(:search_form, merged_form)
+    |> assign(:loading, true)
+    |> assign(:searched, true)
+    |> assign(:error_message, nil)
+    |> assign(:show_predictions, false)
+    |> push_event("save_search", merged_form)
+    |> start_async_fetch(merged_form)
+  end
+
+  @impl true
+  def handle_event("set_type", %{"type" => type}, socket) when type in ["venda", "aluguel"] do
+    updated_form = Map.put(socket.assigns.search_form, "type", type)
+    {:noreply, assign(socket, :search_form, updated_form)}
+  end
+
+  @impl true
+  def handle_event("quick_search", params, socket) do
+    quick_query = params["query"] || ""
+    quick_city = params["city"] || ""
+    quick_state = params["state"] || ""
+    quick_type = params["type"] || socket.assigns.search_form["type"] || "venda"
+
+    search_data = %{
+      "location_query" => quick_query,
+      "city" => quick_city,
+      "state" => quick_state,
+      "neighborhood" => "",
+      "type" => quick_type
+    }
+
+    query_params = clean_params(search_data)
+
+    socket =
+      socket
+      |> push_event("save_search", search_data)
+      |> push_patch(to: ~p"/properties?#{query_params}")
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("clear_filters", _params, socket) do
+    default_params = %{
+      "location_query" => socket.assigns.search_form["location_query"] || "São Paulo, SP",
+      "city" => socket.assigns.search_form["city"] || "sao-paulo",
+      "state" => socket.assigns.search_form["state"] || "sp",
+      "type" => "venda"
+    }
+
+    query_params = clean_params(default_params)
+    {:noreply, push_patch(socket, to: ~p"/properties?#{query_params}")}
   end
 
   @impl true
@@ -177,11 +227,13 @@ defmodule KfofoWeb.PropertyLive.Index do
 
   @impl true
   def handle_event("search", %{"search" => params}, socket) do
-    merged_params = Map.merge(socket.assigns.search_form, params)
+    form_params = Map.take(params, @search_keys)
+    merged_params = Map.merge(@default_search_form, form_params)
     query_params = clean_params(merged_params)
 
     socket =
       socket
+      |> assign(:search_form, merged_params)
       |> push_event("save_search", merged_params)
       |> push_patch(to: ~p"/properties?#{query_params}")
 
@@ -190,7 +242,8 @@ defmodule KfofoWeb.PropertyLive.Index do
 
   @impl true
   def handle_event("restore_search", params, socket) when is_map(params) do
-    merged_params = Map.merge(socket.assigns.search_form, Map.take(params, @search_keys))
+    form_params = Map.take(params, @search_keys)
+    merged_params = Map.merge(@default_search_form, form_params)
     query_params = clean_params(merged_params)
 
     {:noreply, push_patch(socket, to: ~p"/properties?#{query_params}")}
@@ -312,6 +365,8 @@ defmodule KfofoWeb.PropertyLive.Index do
   defp parse_type(_), do: :venda
 
   defp parse_number(nil), do: nil
+  defp parse_number(""), do: nil
+  defp parse_number(num) when is_integer(num), do: num
 
   defp parse_number(str) when is_binary(str) do
     case Integer.parse(String.replace(str, ~r/\D/, "")) do
