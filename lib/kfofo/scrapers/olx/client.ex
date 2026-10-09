@@ -34,18 +34,27 @@ defmodule Kfofo.Scrapers.Olx.Client do
     base_url = config_val(:base_url)
 
     category = Map.get(opts, :category, "imoveis")
-    type = transaction_type(Map.get(opts, :type))
+    property_type = property_type_path(Map.get(opts, :property_type))
+    type = transaction_type(Map.get(opts, :type), property_type)
 
-    path_parts =
-      [category, type]
-      |> maybe_append(Map.get(opts, :state), &"estado-#{&1}")
-      |> maybe_append(Map.get(opts, :region), & &1)
-      |> maybe_append(Map.get(opts, :city), & &1)
-
+    path_parts = build_path_parts(category, type, property_type, opts)
     path = Enum.join(path_parts, "/")
-    query_params = build_query_params(opts)
+    query_params = build_query_params(opts, property_type)
 
     format_url(base_url, path, query_params)
+  end
+
+  defp build_path_parts(category, type, "quartos", opts) do
+    [category, type, "quartos"]
+    |> maybe_append(Map.get(opts, :state), &"estado-#{&1}")
+  end
+
+  defp build_path_parts(category, type, property_type, opts) do
+    [category, type]
+    |> maybe_append(property_type, & &1)
+    |> maybe_append(Map.get(opts, :state), &"estado-#{&1}")
+    |> maybe_append(Map.get(opts, :region), & &1)
+    |> maybe_append(Map.get(opts, :city), & &1)
   end
 
   defp default_fetch(url, headers) do
@@ -87,8 +96,21 @@ defmodule Kfofo.Scrapers.Olx.Client do
     ]
   end
 
-  defp transaction_type(:aluguel), do: "aluguel"
-  defp transaction_type(_), do: "venda"
+  defp transaction_type(_type, "quartos"), do: "aluguel"
+  defp transaction_type(:aluguel, _), do: "aluguel"
+  defp transaction_type("aluguel", _), do: "aluguel"
+  defp transaction_type(_, _), do: "venda"
+
+  defp property_type_path("casa"), do: "casas"
+  defp property_type_path("casas"), do: "casas"
+  defp property_type_path("apartamento"), do: "apartamentos"
+  defp property_type_path("apartamentos"), do: "apartamentos"
+  defp property_type_path("quarto"), do: "quartos"
+  defp property_type_path("quartos"), do: "quartos"
+  defp property_type_path(:casa), do: "casas"
+  defp property_type_path(:apartamento), do: "apartamentos"
+  defp property_type_path(:quarto), do: "quartos"
+  defp property_type_path(_), do: nil
 
   defp format_url(base_url, path, []), do: "#{base_url}/#{path}"
 
@@ -96,14 +118,37 @@ defmodule Kfofo.Scrapers.Olx.Client do
     "#{base_url}/#{path}?#{URI.encode_query(query_params)}"
   end
 
-  defp build_query_params(opts) do
+  defp build_query_params(opts, "quartos") do
+    q_term =
+      Map.get(opts, :neighborhood) ||
+        Map.get(opts, :q) ||
+        format_city_query(Map.get(opts, :city))
+
+    []
+    |> maybe_put_query("q", q_term)
+    |> maybe_put_query("sf", Map.get(opts, :sf) && "1")
+    |> maybe_put_query("ps", Map.get(opts, :min_price))
+    |> maybe_put_query("pe", Map.get(opts, :max_price))
+    |> maybe_put_query("gsp", Map.get(opts, :garages) || Map.get(opts, :garage_spaces))
+    |> maybe_put_query("o", page_param(Map.get(opts, :page)))
+  end
+
+  defp build_query_params(opts, _property_type) do
     []
     |> maybe_put_query("q", Map.get(opts, :neighborhood) || Map.get(opts, :q))
     |> maybe_put_query("sf", Map.get(opts, :sf) && "1")
     |> maybe_put_query("ps", Map.get(opts, :min_price))
     |> maybe_put_query("pe", Map.get(opts, :max_price))
     |> maybe_put_query("ros", Map.get(opts, :bedrooms))
+    |> maybe_put_query("gsp", Map.get(opts, :garages) || Map.get(opts, :garage_spaces))
     |> maybe_put_query("o", page_param(Map.get(opts, :page)))
+  end
+
+  defp format_city_query(nil), do: nil
+  defp format_city_query(""), do: nil
+
+  defp format_city_query(city) when is_binary(city) do
+    city |> String.replace("-", " ") |> String.trim()
   end
 
   defp page_param(page) when is_integer(page) and page > 1, do: page

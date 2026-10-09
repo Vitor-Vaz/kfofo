@@ -95,6 +95,8 @@ O **kfofo** é um agregador inteligente de anúncios de imóveis (casas e aparta
 | **Filtro Região/Cidade**| Mapeamento de regiões OLX (Nova Iguaçu, Meriti, Resende) | 🟡 Médio Prazo | ⏳ *Backlog* |
 | **Nova Jornada (Hero)** | 1º acesso com busca centralizada e imagem de fundo | 🟡 Médio Prazo | 🟢 **Concluído** |
 | **Layout Resultados** | Filtros na barra lateral e listagem de cards ao lado | 🟡 Médio Prazo | 🟢 **Concluído** |
+| **Ordenação Resultados**| Ordenar por menor preço, maior preço e mais recentes | 🟡 Médio Prazo | 🟢 **Concluído** |
+| **Filtros Adicionais** | Filtro de Tipo de Imóvel (apto/casa/quarto) e Vagas (1 a 5+) | 🟡 Médio Prazo | 🟢 **Concluído** |
 | **Página de Detalhes**| Página interna de anúncio com ficha e galeria completa | 🟡 Médio Prazo | ⏳ *Planejado* |
 | **Novos Portais** | Integrações com Zap Imóveis, QuintoAndar e Imovelweb | 🟡 Médio Prazo | ⏳ *Planejado* |
 | **Top Buscas Dinâmicas**| Tabela de analytics para alimentar sugestões rápidas em alta | 🔵 Longo Prazo | ⏳ *Planejado* |

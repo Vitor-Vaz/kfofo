@@ -35,6 +35,41 @@ defmodule Kfofo.Scrapers.OlxTest do
       assert url =~ "o=2"
     end
 
+    test "builds URL with property_type and garages filters" do
+      url_casa =
+        Olx.build_url(%{
+          state: "sp",
+          city: "sao-paulo",
+          property_type: "casa",
+          garages: 2
+        })
+
+      assert url_casa =~ "https://dummy-olx.test/imoveis/venda/casas/estado-sp/sao-paulo?"
+      assert url_casa =~ "gsp=2"
+
+      url_apto =
+        Olx.build_url(%{
+          state: "rj",
+          type: :aluguel,
+          property_type: "apartamento",
+          garages: 1
+        })
+
+      assert url_apto =~ "https://dummy-olx.test/imoveis/aluguel/apartamentos/estado-rj?"
+      assert url_apto =~ "gsp=1"
+
+      url_quarto =
+        Olx.build_url(%{
+          state: "rj",
+          type: :venda,
+          property_type: "quarto",
+          city: "rio-de-janeiro"
+        })
+
+      assert url_quarto =~ "https://dummy-olx.test/imoveis/aluguel/quartos/estado-rj?"
+      assert url_quarto =~ "q=rio+de+janeiro"
+    end
+
     test "builds URL with neighborhood filter" do
       url = Olx.build_url(%{state: "sp", city: "sao-paulo", neighborhood: "moema"})
       assert url =~ "https://dummy-olx.test/imoveis/venda/estado-sp/sao-paulo?"

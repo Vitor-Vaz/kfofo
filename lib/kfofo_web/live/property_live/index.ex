@@ -10,20 +10,26 @@ defmodule KfofoWeb.PropertyLive.Index do
     "city",
     "neighborhood",
     "type",
+    "property_type",
     "min_price",
     "max_price",
-    "bedrooms"
+    "bedrooms",
+    "garages",
+    "sort_by"
   ]
 
   @default_search_form %{
-    "location_query" => "São Paulo, SP",
-    "state" => "sp",
-    "city" => "sao-paulo",
+    "location_query" => "",
+    "state" => "",
+    "city" => "",
     "neighborhood" => "",
     "type" => "venda",
+    "property_type" => "",
     "min_price" => "",
     "max_price" => "",
-    "bedrooms" => ""
+    "bedrooms" => "",
+    "garages" => "",
+    "sort_by" => "recent"
   }
 
   @impl true
@@ -32,10 +38,12 @@ defmodule KfofoWeb.PropertyLive.Index do
       socket
       |> assign(:page_title, "Kfofo - O seu novo lar")
       |> assign(:search_form, @default_search_form)
+      |> assign(:sort_by, "recent")
       |> assign(:location_predictions, [])
       |> assign(:show_predictions, false)
       |> assign(:location_error, nil)
       |> assign(:loading, false)
+      |> assign(:raw_properties, [])
       |> assign(:properties, [])
       |> assign(:total, 0)
       |> assign(:searched, false)
@@ -53,7 +61,16 @@ defmodule KfofoWeb.PropertyLive.Index do
   defp apply_action(socket, :home, search_params) when search_params == %{} do
     socket
     |> assign(:page_title, "Kfofo - Encontre o seu novo lar")
+    |> assign(:search_form, @default_search_form)
+    |> assign(:sort_by, "recent")
+    |> assign(:raw_properties, [])
+    |> assign(:properties, [])
+    |> assign(:total, 0)
+    |> assign(:loading, false)
+    |> assign(:searched, false)
+    |> assign(:error_message, nil)
     |> assign(:show_predictions, false)
+    |> push_event("clear_saved_search", %{})
   end
 
   defp apply_action(socket, :home, search_params) do
@@ -63,10 +80,12 @@ defmodule KfofoWeb.PropertyLive.Index do
 
   defp apply_action(socket, :results, search_params) do
     merged_form = Map.merge(@default_search_form, search_params)
+    sort_by = Map.get(merged_form, "sort_by", "recent")
 
     socket
     |> assign(:page_title, "Resultados da Busca · Kfofo")
     |> assign(:search_form, merged_form)
+    |> assign(:sort_by, sort_by)
     |> assign(:loading, true)
     |> assign(:searched, true)
     |> assign(:error_message, nil)
@@ -250,11 +269,32 @@ defmodule KfofoWeb.PropertyLive.Index do
   end
 
   @impl true
+  def handle_event("change_sort", %{"sort_by" => sort_by}, socket) do
+    raw = socket.assigns[:raw_properties] || socket.assigns.properties
+    sorted = sort_properties(raw, sort_by)
+    updated_form = Map.put(socket.assigns.search_form, "sort_by", sort_by)
+    query_params = clean_params(updated_form)
+
+    socket =
+      socket
+      |> assign(:sort_by, sort_by)
+      |> assign(:search_form, updated_form)
+      |> assign(:properties, sorted)
+      |> push_patch(to: ~p"/properties?#{query_params}", replace: true)
+
+    {:noreply, socket}
+  end
+
+  @impl true
   def handle_async(:fetch_olx, {:ok, {:ok, result}}, socket) do
+    sort_by = socket.assigns[:sort_by] || "recent"
+    sorted_properties = sort_properties(result.properties, sort_by)
+
     socket =
       socket
       |> assign(:loading, false)
-      |> assign(:properties, result.properties)
+      |> assign(:raw_properties, result.properties)
+      |> assign(:properties, sorted_properties)
       |> assign(:total, result.total)
 
     {:noreply, socket}
@@ -309,10 +349,12 @@ defmodule KfofoWeb.PropertyLive.Index do
       state: state,
       city: city,
       neighborhood: neighborhood,
-      type: parse_type(Map.get(params, "type")),
+      type: parse_type(Map.get(params, "type"), get_clean_string(params, "property_type")),
+      property_type: get_clean_string(params, "property_type"),
       min_price: parse_number(Map.get(params, "min_price")),
       max_price: parse_number(Map.get(params, "max_price")),
-      bedrooms: parse_number(Map.get(params, "bedrooms"))
+      bedrooms: parse_number(Map.get(params, "bedrooms")),
+      garages: parse_number(Map.get(params, "garages"))
     }
   end
 
@@ -361,17 +403,28 @@ defmodule KfofoWeb.PropertyLive.Index do
     end
   end
 
-  defp parse_type("aluguel"), do: :aluguel
-  defp parse_type(_), do: :venda
+  defp parse_type("aluguel", _), do: :aluguel
+  defp parse_type(_, "quarto"), do: :aluguel
+  defp parse_type(_, "quartos"), do: :aluguel
+  defp parse_type(_, _), do: :venda
 
   defp parse_number(nil), do: nil
   defp parse_number(""), do: nil
-  defp parse_number(num) when is_integer(num), do: num
+  defp parse_number(num) when is_integer(num) and num >= 0, do: num
+  defp parse_number(num) when is_integer(num), do: nil
 
   defp parse_number(str) when is_binary(str) do
-    case Integer.parse(String.replace(str, ~r/\D/, "")) do
-      {num, _} -> num
-      :error -> nil
+    trimmed = String.trim(str)
+
+    case String.starts_with?(trimmed, "-") do
+      true ->
+        nil
+
+      false ->
+        case Integer.parse(String.replace(trimmed, ~r/\D/, "")) do
+          {num, _} when num >= 0 -> num
+          _ -> nil
+        end
     end
   end
 
@@ -449,9 +502,41 @@ defmodule KfofoWeb.PropertyLive.Index do
   defp maybe_put_field(map, _key, ""), do: map
   defp maybe_put_field(map, key, val), do: Map.put(map, key, val)
 
+  defp sort_properties(properties, "price_asc") when is_list(properties) do
+    Enum.sort_by(
+      properties,
+      fn prop ->
+        case prop.price do
+          price when is_number(price) -> price
+          _ -> :infinity
+        end
+      end,
+      :asc
+    )
+  end
+
+  defp sort_properties(properties, "price_desc") when is_list(properties) do
+    Enum.sort_by(
+      properties,
+      fn prop ->
+        case prop.price do
+          price when is_number(price) -> price
+          _ -> -1
+        end
+      end,
+      :desc
+    )
+  end
+
+  defp sort_properties(properties, _), do: properties
+
   defp clean_params(params) do
     params
-    |> Enum.reject(fn {_k, v} -> is_nil(v) or v == "" end)
+    |> Enum.reject(fn
+      {_k, v} when is_nil(v) or v == "" -> true
+      {"sort_by", "recent"} -> true
+      _ -> false
+    end)
     |> Map.new()
   end
 end
