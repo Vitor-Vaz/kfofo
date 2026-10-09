@@ -509,23 +509,32 @@ defmodule KfofoWeb.PropertyLive.Index do
   defp parse_number(_), do: nil
 
   defp format_error({:network_error, {:http_error, 403}}),
-    do: "A OLX bloqueou a requisição (Status HTTP 403 - Forbidden). Tente novamente em instantes."
+    do:
+      "Os portais bloquearam a requisição temporariamente (Status HTTP 403). Tente novamente em instantes."
+
+  defp format_error({:http_error, 403}),
+    do:
+      "Os portais bloquearam a requisição temporariamente (Status HTTP 403). Tente novamente em instantes."
 
   defp format_error({:network_error, {:http_error, status}}),
-    do: "A OLX respondeu com erro (Status HTTP #{status})."
+    do: "Os portais responderam com erro (Status HTTP #{status})."
 
   defp format_error({:http_error, status}),
-    do: "Falha na requisição para a OLX (Status HTTP #{status})."
+    do: "Falha na requisição para os portais (Status HTTP #{status})."
 
-  defp format_error({:network_error, _}), do: "Erro de conexão ou timeout com a OLX."
+  defp format_error(:timeout),
+    do: "A busca demorou mais que o esperado para responder. Tente novamente em instantes."
+
+  defp format_error({:network_error, _}),
+    do: "Erro de conexão ou timeout com os portais parceiros."
 
   defp format_error(:next_data_script_not_found),
-    do: "Não foi possível extrair a estrutura de dados da página da OLX."
+    do: "Não foi possível extrair a estrutura de dados dos portais."
 
   defp format_error(:no_ads_found),
     do: "Nenhum imóvel foi encontrado para os filtros selecionados."
 
-  defp format_error(_), do: "Ocorreu um erro ao buscar imóveis na OLX."
+  defp format_error(_), do: "Ocorreu um erro ao buscar imóveis nos portais parceiros."
 
   def format_price(nil), do: "Sob Consulta"
 
