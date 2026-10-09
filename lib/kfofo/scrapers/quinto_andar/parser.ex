@@ -72,7 +72,8 @@ defmodule Kfofo.Scrapers.QuintoAndar.Parser do
     price = extract_price(house)
     images = extract_images(house)
     location = extract_location(house)
-    details = extract_details(house)
+    property_type = extract_property_type(house)
+    details = extract_details(house, property_type)
     title = extract_title(house, location)
 
     %{
@@ -81,12 +82,103 @@ defmodule Kfofo.Scrapers.QuintoAndar.Parser do
       price: price,
       url: url,
       source: "quintoandar",
+      property_type: property_type,
       description: house["shortRentDescription"] || house["shortSaleDescription"] || "",
       location: location,
       details: details,
       images: images
     }
   end
+
+  @doc """
+  Extracts and normalizes the property type for QuintoAndar house items.
+  """
+  def extract_property_type(house) when is_map(house) do
+    type = to_clean_str(house["type"])
+    house_type = to_clean_str(house["houseType"])
+
+    cond do
+      matches_casa_type?(type) or matches_casa_type?(house_type) ->
+        "casa"
+
+      matches_apto_type?(type) or matches_apto_type?(house_type) ->
+        "apartamento"
+
+      matches_quarto_type?(type) or matches_quarto_type?(house_type) ->
+        "quarto"
+
+      true ->
+        infer_property_type_from_text(house)
+    end
+  end
+
+  def extract_property_type(_), do: "outro"
+
+  defp matches_casa_type?(nil), do: false
+  defp matches_casa_type?(""), do: false
+
+  defp matches_casa_type?(str) when is_binary(str) do
+    lower = String.downcase(str)
+    String.contains?(lower, ["casa", "sobrado", "house", "townhouse", "village"])
+  end
+
+  defp matches_apto_type?(nil), do: false
+  defp matches_apto_type?(""), do: false
+
+  defp matches_apto_type?(str) when is_binary(str) do
+    lower = String.downcase(str)
+
+    String.contains?(lower, [
+      "apartamento",
+      "apto",
+      "apartment",
+      "cobertura",
+      "penthouse",
+      "flat",
+      "loft",
+      "duplex",
+      "triplex"
+    ])
+  end
+
+  defp matches_quarto_type?(nil), do: false
+  defp matches_quarto_type?(""), do: false
+
+  defp matches_quarto_type?(str) when is_binary(str) do
+    lower = String.downcase(str)
+    String.contains?(lower, ["kitnet", "studio", "quarto", "room", "kitchenette"])
+  end
+
+  defp infer_property_type_from_text(house) do
+    text =
+      [
+        house["shortRentDescription"],
+        house["shortSaleDescription"],
+        house["description"]
+      ]
+      |> Enum.reject(&is_nil/1)
+      |> Enum.join(" ")
+      |> String.downcase()
+
+    cond do
+      String.contains?(text, ["casa", "sobrado"]) and not String.contains?(text, "apartamento") ->
+        "casa"
+
+      String.contains?(text, ["apartamento", "apto", "cobertura", "flat", "loft"]) ->
+        "apartamento"
+
+      String.contains?(text, ["kitnet", "studio", "quarto"]) ->
+        "quarto"
+
+      true ->
+        "apartamento"
+    end
+  end
+
+  defp to_clean_str(nil), do: nil
+  defp to_clean_str(val) when is_binary(val), do: String.trim(val)
+  defp to_clean_str(atom) when is_atom(atom), do: to_string(atom)
+  defp to_clean_str(_), do: nil
 
   defp extract_price(house) do
     case {house["forRent"], house["rentPrice"], house["salePrice"]} do
@@ -159,13 +251,14 @@ defmodule Kfofo.Scrapers.QuintoAndar.Parser do
     }
   end
 
-  defp extract_details(house) do
+  defp extract_details(house, property_type) do
     bedrooms = parse_int_field(house["bedrooms"])
     bathrooms = parse_int_field(house["bathrooms"])
     garage_spaces = parse_int_field(house["parkingSpots"])
     area_sqm = parse_int_field(house["area"])
 
     %{
+      property_type: property_type,
       bedrooms: bedrooms,
       rooms: bedrooms,
       bathrooms: bathrooms,
@@ -204,7 +297,7 @@ defmodule Kfofo.Scrapers.QuintoAndar.Parser do
   defp build_fallback_title(type, bedrooms, neighborhood)
        when is_integer(bedrooms) and bedrooms > 0 and is_binary(neighborhood) and
               byte_size(neighborhood) > 0 do
-    "#{type} com #{bedrooms} #{if bedrooms == 1, do: "quarto", else: "quartos"} em #{neighborhood}"
+    "#{type} com #{bedrooms} #{pluralize_quarto(bedrooms)} em #{neighborhood}"
   end
 
   defp build_fallback_title(type, _bedrooms, neighborhood)
@@ -215,4 +308,7 @@ defmodule Kfofo.Scrapers.QuintoAndar.Parser do
   defp build_fallback_title(type, _bedrooms, _neighborhood) do
     type
   end
+
+  defp pluralize_quarto(1), do: "quarto"
+  defp pluralize_quarto(_), do: "quartos"
 end

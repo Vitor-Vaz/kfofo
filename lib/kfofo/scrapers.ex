@@ -22,6 +22,7 @@ defmodule Kfofo.Scrapers do
     * `:neighborhood` - Neighborhood name or slug
     * `:type` - `:venda` or `:aluguel`
     * `:property_type` - "apartamento", "casa", "quarto"
+    * `:source` - "olx", "quintoandar", or "all" (default: "all")
     * `:min_price` - Minimum price
     * `:max_price` - Maximum price
     * `:bedrooms` - Bedrooms count
@@ -30,12 +31,17 @@ defmodule Kfofo.Scrapers do
 
   ## Examples
 
-      iex> Kfofo.Scrapers.fetch_all_properties(%{state: "sp", city: "sao-paulo"})
-      {:ok, %{properties: [...], total: 74}}
+      iex> Kfofo.Scrapers.fetch_all_properties(%{state: "sp", city: "sao-paulo", source: "quintoandar"})
+      {:ok, %{properties: [...], total: 24}}
 
   """
   def fetch_all_properties(opts \\ %{}) do
-    scrapers = Map.get(opts, :scrapers, @scrapers)
+    source_filter = get_source_opt(opts)
+
+    scrapers =
+      opts
+      |> Map.get(:scrapers, @scrapers)
+      |> filter_scrapers_by_source(source_filter)
 
     tasks =
       Enum.map(scrapers, fn {name, fetch_fn} ->
@@ -59,7 +65,10 @@ defmodule Kfofo.Scrapers do
         _ -> []
       end)
 
-    successful_properties = interleave_or_dedup(property_lists)
+    successful_properties =
+      property_lists
+      |> interleave_or_dedup()
+      |> filter_properties_by_source(source_filter)
 
     case {successful_properties, results} do
       {[], [{:error, first_reason} | _]} ->
@@ -73,6 +82,38 @@ defmodule Kfofo.Scrapers do
            page: 1
          }}
     end
+  end
+
+  defp get_source_opt(opts) when is_map(opts) do
+    normalize_source(Map.get(opts, :source) || Map.get(opts, "source"))
+  end
+
+  defp get_source_opt(_), do: nil
+
+  defp normalize_source("olx"), do: "olx"
+  defp normalize_source(:olx), do: "olx"
+  defp normalize_source("quintoandar"), do: "quintoandar"
+  defp normalize_source(:quintoandar), do: "quintoandar"
+  defp normalize_source(_), do: nil
+
+  defp filter_scrapers_by_source(scrapers, nil), do: scrapers
+
+  defp filter_scrapers_by_source(scrapers, "olx") do
+    Enum.filter(scrapers, fn {name, _} -> name in [:olx, "olx"] end)
+  end
+
+  defp filter_scrapers_by_source(scrapers, "quintoandar") do
+    Enum.filter(scrapers, fn {name, _} -> name in [:quintoandar, "quintoandar"] end)
+  end
+
+  defp filter_scrapers_by_source(scrapers, _), do: scrapers
+
+  defp filter_properties_by_source(properties, nil), do: properties
+
+  defp filter_properties_by_source(properties, target_source) when is_binary(target_source) do
+    Enum.filter(properties, fn prop ->
+      to_string(prop[:source] || "") == target_source
+    end)
   end
 
   defp interleave_or_dedup(property_lists) when is_list(property_lists) do

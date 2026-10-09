@@ -11,6 +11,7 @@ defmodule KfofoWeb.PropertyLive.Index do
     "neighborhood",
     "type",
     "property_type",
+    "source",
     "min_price",
     "max_price",
     "bedrooms",
@@ -25,6 +26,7 @@ defmodule KfofoWeb.PropertyLive.Index do
     "neighborhood" => "",
     "type" => "venda",
     "property_type" => "",
+    "source" => "",
     "min_price" => "",
     "max_price" => "",
     "bedrooms" => "",
@@ -85,6 +87,7 @@ defmodule KfofoWeb.PropertyLive.Index do
     "neighborhood",
     "type",
     "property_type",
+    "source",
     "min_price",
     "max_price",
     "bedrooms",
@@ -129,6 +132,13 @@ defmodule KfofoWeb.PropertyLive.Index do
   def handle_event("set_type", %{"type" => type}, socket) when type in ["venda", "aluguel"] do
     updated_form = Map.put(socket.assigns.search_form, "type", type)
     {:noreply, assign(socket, :search_form, updated_form)}
+  end
+
+  @impl true
+  def handle_event("set_source", %{"source" => source}, socket) do
+    updated_form = Map.put(socket.assigns.search_form, "source", source)
+    query_params = clean_params(updated_form)
+    {:noreply, push_patch(socket, to: ~p"/properties?#{query_params}")}
   end
 
   @impl true
@@ -418,6 +428,7 @@ defmodule KfofoWeb.PropertyLive.Index do
       neighborhood: neighborhood,
       type: parse_type(Map.get(params, "type"), get_clean_string(params, "property_type")),
       property_type: get_clean_string(params, "property_type"),
+      source: get_clean_string(params, "source"),
       min_price: parse_number(Map.get(params, "min_price")),
       max_price: parse_number(Map.get(params, "max_price")),
       bedrooms: parse_number(Map.get(params, "bedrooms")),
@@ -613,6 +624,7 @@ defmodule KfofoWeb.PropertyLive.Index do
     |> Enum.reject(fn
       {_k, v} when is_nil(v) or v == "" -> true
       {"sort_by", "recent"} -> true
+      {"source", "all"} -> true
       _ -> false
     end)
     |> Map.new()

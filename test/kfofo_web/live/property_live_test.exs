@@ -136,4 +136,44 @@ defmodule KfofoWeb.PropertyLiveTest do
 
     assert render(view) =~ "Maior valor"
   end
+
+  test "clicking source quick filter tabs patches URL with source parameter", %{conn: conn} do
+    {:ok, view, _html} = live(conn, "/properties?location_query=Moema&type=aluguel")
+
+    view
+    |> element("button[phx-value-source='quintoandar']")
+    |> render_click()
+
+    assert_patched(
+      view,
+      "/properties?location_query=Moema&source=quintoandar&type=aluguel"
+    )
+
+    view
+    |> element("button[phx-value-source='olx']")
+    |> render_click()
+
+    assert_patched(
+      view,
+      "/properties?location_query=Moema&source=olx&type=aluguel"
+    )
+  end
+
+  test "submitting sidebar search preserves existing source filter parameter", %{conn: conn} do
+    {:ok, view, _html} = live(conn, "/properties?source=quintoandar&location_query=Vila+Mariana")
+
+    view
+    |> form("form[phx-submit='search']", %{
+      "search" => %{
+        "location_query" => "Vila Mariana, SP",
+        "type" => "venda"
+      }
+    })
+    |> render_submit()
+
+    assert_patched(
+      view,
+      "/properties?location_query=Vila+Mariana%2C+SP&source=quintoandar&type=venda"
+    )
+  end
 end

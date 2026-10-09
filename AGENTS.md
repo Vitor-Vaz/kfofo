@@ -9,10 +9,11 @@ Este documento estabelece as regras de engajamento, boas práticas e restriçõe
 1. **NUNCA fazer Commit:** A IA **não** deve executar `git commit`. A criação e finalização de commits fica a cargo exclusivo do desenvolvedor humano.
 2. **NUNCA fazer Push:** A IA **não** deve executar `git push` para qualquer repositório remoto.
 3. **Resumo de Pull Request Obrigatório:**
-   - Sempre que concluir as tarefas em uma *feature branch*, a IA deve criar um arquivo Markdown (`PR_SUMMARY.md` na raiz) contendo:
+   - Sempre que concluir as tarefas em uma *feature branch*, a IA deve criar um arquivo Markdown (`PR_SUMMARY.md` na raiz) contendo **apenas**:
      - **Resumo das Alterações**: Visão geral direta e sucinta do que foi implementado/corrigido.
      - **Como Testar**: Comandos diretos para validação (`mix test`, `mix format`, etc.).
      - **Checklist de Qualidade**: Confirmação dos critérios de aceitação básicos.
+   - **NUNCA incluir lista de arquivos modificados** no `PR_SUMMARY.md` (o GitHub já faz isso nativamente na aba de Files Changed).
    - Este arquivo servirá para o desenvolvedor copiar e colar na descrição do Pull Request no GitHub.
 4. Sempre ao finalizar uma tarefa, rodar todos os testes e linters.
 5. Sempre ao finalizar uma tarefa, revisar o arquivo PROJECT_PLAN.MD e atualizar o status de cada tarefa.
