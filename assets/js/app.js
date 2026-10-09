@@ -113,10 +113,11 @@ Hooks.SearchPersistence = {
       } catch (_e) {}
     })
 
+    const isPropertiesRoute = window.location.pathname.startsWith("/properties")
     const urlParams = new URLSearchParams(window.location.search)
     const hasSearchParams = urlParams.has("location_query") || urlParams.has("city") || urlParams.has("state") || urlParams.has("type")
 
-    if (!hasSearchParams) {
+    if (isPropertiesRoute && !hasSearchParams) {
       try {
         const saved = localStorage.getItem("kfofo_search_filters")
         if (saved) {

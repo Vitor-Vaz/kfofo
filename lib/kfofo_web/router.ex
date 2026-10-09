@@ -17,8 +17,8 @@ defmodule KfofoWeb.Router do
   scope "/", KfofoWeb do
     pipe_through :browser
 
-    live "/", PropertyLive.Index
-    live "/properties", PropertyLive.Index
+    live "/", PropertyLive.Index, :home
+    live "/properties", PropertyLive.Index, :results
   end
 
   # Other scopes may use custom stacks.

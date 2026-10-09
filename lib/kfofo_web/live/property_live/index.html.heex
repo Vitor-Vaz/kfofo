@@ -1,376 +1,758 @@
-<div
-  id="property-search-root"
-  phx-hook="SearchPersistence"
-  class="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8 py-8"
->
-  <div class="mb-10 rounded-3xl bg-gradient-to-br from-zinc-900 via-zinc-900/95 to-zinc-950 p-6 sm:p-8 text-white shadow-2xl border border-zinc-800/80">
-    <div class="flex items-center gap-3 mb-4">
-      <div class="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-lg shadow-orange-500/25">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="w-6 h-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-          />
-        </svg>
+<div id="property-search-root" phx-hook="SearchPersistence" class="w-full">
+  <%= if @live_action == :home do %>
+    <!-- ==================== HERO HOME PAGE ==================== -->
+    <div class="relative overflow-hidden min-h-screen flex flex-col justify-between">
+      <!-- Background Glows -->
+      <div class="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] sm:w-[900px] h-[500px] bg-gradient-to-tr from-orange-600/20 via-amber-500/10 to-transparent blur-[120px] rounded-full">
       </div>
-      <div>
-        <span class="text-2xl font-black tracking-tight text-white flex items-center gap-1">
-          Kfofo<span class="text-orange-500 text-3xl leading-none">.</span>
-        </span>
-        <p class="text-xs font-medium text-zinc-400">O seu agregador inteligente de lares</p>
+      <div class="pointer-events-none absolute top-1/3 right-0 w-[400px] h-[400px] bg-orange-500/10 blur-[100px] rounded-full">
       </div>
-    </div>
-
-    <h1 class="text-3xl font-extrabold tracking-tight sm:text-4xl text-white">
-      Encontre o seu cantinho ideal
-    </h1>
-    <p class="mt-2 max-w-2xl text-sm text-zinc-300">
-      Pesquise e compare imóveis para morar ou investir nos principais portais do Brasil em uma única experiência.
-    </p>
-
-    <form phx-submit="search" class="mt-7">
-      <input type="hidden" name="search[state]" value={@search_form["state"]} />
-      <input type="hidden" name="search[city]" value={@search_form["city"]} />
-      <input type="hidden" name="search[neighborhood]" value={@search_form["neighborhood"]} />
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
-        <div
-          id="location-autocomplete-container"
-          phx-hook="LocationAutocomplete"
-          class="relative sm:col-span-2 lg:col-span-3"
-        >
-          <label class="block text-xs font-medium text-zinc-300 mb-1.5">
-            Localização (Bairro, Cidade ou Estado)
-          </label>
-          <div class="relative">
-            <input
-              type="text"
-              name="search[location_query]"
-              value={@search_form["location_query"]}
-              autocomplete="off"
-              placeholder="Digite um bairro ou cidade (ex: Moema, São Paulo)..."
-              class="w-full rounded-xl bg-zinc-950/80 border border-zinc-700/80 text-white font-normal not-italic placeholder:italic placeholder:font-normal placeholder:text-zinc-500 pl-10 pr-4 py-2.5 text-sm focus:border-orange-500 focus:ring-orange-500 focus:outline-none transition shadow-inner"
-            />
-            <span class="absolute left-3.5 top-2.5 text-zinc-400 text-sm">📍</span>
-          </div>
-
-          <%= if @show_predictions && (@location_predictions != [] || !is_nil(@location_error)) do %>
-            <div
-              data-predictions-dropdown
-              class="absolute z-50 left-0 right-0 mt-2 rounded-2xl bg-zinc-900 border border-zinc-700 shadow-2xl overflow-hidden divide-y divide-zinc-800 max-h-64 overflow-y-auto"
-            >
-              <%= if @location_error do %>
-                <div class="p-3.5 text-xs text-amber-300 bg-amber-950/50 flex items-start gap-2.5">
-                  <span class="text-base">⚠️</span>
-                  <div>{@location_error}</div>
-                </div>
-              <% end %>
-
-              <%= for pred <- @location_predictions do %>
-                <button
-                  type="button"
-                  data-prediction-item
-                  phx-click="select_location"
-                  phx-value-place-id={pred.place_id}
-                  phx-value-description={pred.description}
-                  class="w-full text-left px-4 py-3 text-xs text-zinc-300 hover:bg-orange-500/20 hover:text-white hover:border-l-4 hover:border-orange-500 hover:!pl-5 flex items-center gap-3.5 transition-all duration-150 border-l-4 border-transparent group/item"
-                >
-                  <div class="flex items-center justify-center w-7 h-7 rounded-lg bg-zinc-800/80 text-zinc-400 group-hover/item:bg-orange-500/30 group-hover/item:text-orange-400 transition-colors flex-shrink-0">
-                    📍
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <div class="font-semibold text-zinc-100 group-hover/item:text-white truncate">
-                      {pred.main_text}
-                    </div>
-                    <div class="text-[11px] text-zinc-400 group-hover/item:text-orange-200/80 truncate">
-                      {pred.secondary_text}
-                    </div>
-                  </div>
-                </button>
-              <% end %>
-            </div>
-          <% end %>
-        </div>
-
-        <div>
-          <label class="block text-xs font-medium text-zinc-300 mb-1.5">Tipo de Negócio</label>
-          <select
-            name="search[type]"
-            class="w-full rounded-xl bg-zinc-950/80 border border-zinc-700/80 text-white font-normal not-italic px-3.5 py-2.5 text-sm focus:border-orange-500 focus:ring-orange-500 focus:outline-none transition"
-          >
-            <option value="venda" selected={@search_form["type"] == "venda"}>
-              Comprar (Venda)
-            </option>
-            <option value="aluguel" selected={@search_form["type"] == "aluguel"}>Alugar</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-xs font-medium text-zinc-300 mb-1.5">Preço Mínimo (R$)</label>
-          <input
-            type="number"
-            name="search[min_price]"
-            value={@search_form["min_price"]}
-            placeholder="Ex: 200000"
-            class="w-full rounded-xl bg-zinc-950/80 border border-zinc-700/80 text-white font-normal not-italic placeholder:italic placeholder:font-normal placeholder:text-zinc-500 px-3.5 py-2.5 text-sm focus:border-orange-500 focus:ring-orange-500 focus:outline-none transition"
-          />
-        </div>
-
-        <div>
-          <label class="block text-xs font-medium text-zinc-300 mb-1.5">Preço Máximo (R$)</label>
-          <input
-            type="number"
-            name="search[max_price]"
-            value={@search_form["max_price"]}
-            placeholder="Ex: 800000"
-            class="w-full rounded-xl bg-zinc-950/80 border border-zinc-700/80 text-white font-normal not-italic placeholder:italic placeholder:font-normal placeholder:text-zinc-500 px-3.5 py-2.5 text-sm focus:border-orange-500 focus:ring-orange-500 focus:outline-none transition"
-          />
-        </div>
-
-        <div class="sm:col-span-2 lg:col-span-2">
-          <label class="block text-xs font-medium text-zinc-300 mb-1.5">Mínimo de Quartos</label>
-          <input
-            type="number"
-            name="search[bedrooms]"
-            value={@search_form["bedrooms"]}
-            placeholder="Ex: 2"
-            class="w-full rounded-xl bg-zinc-950/80 border border-zinc-700/80 text-white font-normal not-italic placeholder:italic placeholder:font-normal placeholder:text-zinc-500 px-3.5 py-2.5 text-sm focus:border-orange-500 focus:ring-orange-500 focus:outline-none transition"
-          />
-        </div>
-      </div>
-
-      <div class="mt-6 flex justify-end">
-        <button
-          type="submit"
-          disabled={@loading}
-          class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 px-7 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-600/30 transition disabled:opacity-50 active:scale-98"
-        >
-          <%= if @loading do %>
+      
+<!-- Top Nav -->
+      <header class="relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-lg shadow-orange-500/25">
             <svg
-              class="animate-spin h-4 w-4 text-white"
               xmlns="http://www.w3.org/2000/svg"
+              class="w-5 h-5"
               fill="none"
               viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2.2"
             >
-              <circle
-                class="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                stroke-width="4"
-              >
-              </circle>
               <path
-                class="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              >
-              </path>
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              />
             </svg>
-            Buscando Imóveis...
-          <% else %>
-            🔍 Buscar Imóveis
-          <% end %>
-        </button>
-      </div>
-    </form>
-  </div>
+          </div>
+          <div>
+            <span class="text-2xl font-black tracking-tight text-white flex items-center gap-1">
+              Kfofo<span class="text-orange-500 text-3xl leading-none">.</span>
+            </span>
+          </div>
+        </div>
 
-  <%= if @error_message do %>
-    <div class="rounded-2xl border border-red-500/30 bg-red-950/40 p-4 text-sm text-red-200 mb-8 flex items-center gap-3 shadow-lg">
-      <span class="text-xl">⚠️</span>
-      <div>{@error_message}</div>
-    </div>
-  <% end %>
+        <.link
+          patch={~p"/properties"}
+          class="text-xs font-semibold text-zinc-300 hover:text-white bg-zinc-900/80 hover:bg-zinc-800 px-4 py-2 rounded-xl border border-zinc-800 hover:border-zinc-700 transition"
+        >
+          Explorar Imóveis ↗
+        </.link>
+      </header>
+      
+<!-- Hero Main Content -->
+      <main class="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 text-center">
+        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-400 text-xs font-semibold tracking-wide uppercase mb-6 shadow-inner">
+          <span>✨</span>
+          <span>O seu agregador inteligente de lares</span>
+        </div>
 
-  <%= if @searched && !@loading do %>
-    <div class="mb-6 flex items-center justify-between">
-      <h2 class="text-xl font-bold text-white tracking-tight">
-        Resultados da Busca
-      </h2>
-      <span class="text-sm font-medium text-zinc-400">
-        {@total} {if @total == 1, do: "imóvel encontrado", else: "imóveis encontrados"}
-      </span>
-    </div>
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white max-w-4xl mx-auto leading-[1.15]">
+          Encontre o cantinho perfeito para chamar de <span class="bg-gradient-to-r from-orange-400 via-amber-400 to-orange-500 bg-clip-text text-transparent">seu lar</span>.
+        </h1>
 
-    <%= if @properties == [] && is_nil(@error_message) do %>
-      <div class="text-center py-16 rounded-3xl border border-dashed border-zinc-800 bg-zinc-900/30 p-8">
-        <p class="text-zinc-400 text-base">Nenhum imóvel encontrado para esses filtros.</p>
-      </div>
-    <% else %>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <%= for property <- @properties do %>
-          <div class="group rounded-3xl border border-zinc-800/80 bg-zinc-900/90 overflow-hidden shadow-xl hover:shadow-2xl hover:border-zinc-700 transition duration-300 flex flex-col justify-between">
-            <div>
+        <p class="mt-5 max-w-2xl mx-auto text-base sm:text-lg text-zinc-300 font-normal leading-relaxed">
+          Compare milhares de casas e apartamentos na OLX e nos principais portais em tempo real, sem anúncios repetidos e com busca precisa por bairro.
+        </p>
+        
+<!-- Big Hero Search Card -->
+        <div class="mt-10 sm:mt-12 bg-gradient-to-b from-zinc-900/95 via-zinc-900/90 to-zinc-950/95 backdrop-blur-2xl border border-zinc-700/80 rounded-3xl p-6 sm:p-8 shadow-2xl text-left max-w-4xl mx-auto">
+          <!-- Business Type Tabs -->
+          <div class="flex items-center gap-2 mb-6 border-b border-zinc-800 pb-4">
+            <button
+              type="button"
+              phx-click="set_type"
+              phx-value-type="venda"
+              class={"px-5 py-2 rounded-xl text-xs font-bold transition-all duration-200 #{if @search_form["type"] == "venda", do: "bg-orange-600 text-white shadow-lg shadow-orange-600/30", else: "bg-zinc-800/80 text-zinc-400 hover:text-white hover:bg-zinc-800"}"}
+            >
+              🏷️ Comprar (Venda)
+            </button>
+            <button
+              type="button"
+              phx-click="set_type"
+              phx-value-type="aluguel"
+              class={"px-5 py-2 rounded-xl text-xs font-bold transition-all duration-200 #{if @search_form["type"] == "aluguel", do: "bg-orange-600 text-white shadow-lg shadow-orange-600/30", else: "bg-zinc-800/80 text-zinc-400 hover:text-white hover:bg-zinc-800"}"}
+            >
+              🔑 Alugar
+            </button>
+          </div>
+
+          <form phx-submit="search">
+            <input type="hidden" name="search[type]" value={@search_form["type"]} />
+            <input type="hidden" name="search[state]" value={@search_form["state"]} />
+            <input type="hidden" name="search[city]" value={@search_form["city"]} />
+            <input type="hidden" name="search[neighborhood]" value={@search_form["neighborhood"]} />
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 items-end">
+              <!-- Location with Autocomplete -->
               <div
-                id={"carousel-#{property.external_id}"}
-                phx-hook="CardCarousel"
-                class="relative h-64 sm:h-72 w-full bg-zinc-950 overflow-hidden select-none"
+                id="home-location-autocomplete-container"
+                phx-hook="LocationAutocomplete"
+                class="relative sm:col-span-2 lg:col-span-5"
               >
-                <!-- Sliding Track with all images pre-rendered -->
-                <div
-                  data-track
-                  class="flex w-full h-full transition-transform duration-300 ease-out"
-                  style="transform: translateX(0%);"
+                <label class="block text-xs font-medium text-zinc-300 mb-1.5">
+                  Localização (Bairro, Cidade ou Estado)
+                </label>
+                <div class="relative">
+                  <input
+                    type="text"
+                    name="search[location_query]"
+                    value={@search_form["location_query"]}
+                    autocomplete="off"
+                    placeholder="Ex: Moema, São Paulo ou Bangu, RJ..."
+                    class="w-full rounded-xl bg-zinc-950/80 border border-zinc-700/80 text-white font-normal not-italic placeholder:italic placeholder:font-normal placeholder:text-zinc-500 pl-10 pr-4 py-3 text-sm focus:border-orange-500 focus:ring-orange-500 focus:outline-none transition shadow-inner"
+                  />
+                  <span class="absolute left-3.5 top-3 text-zinc-400 text-sm">📍</span>
+                </div>
+
+                <%= if @show_predictions && (@location_predictions != [] || !is_nil(@location_error)) do %>
+                  <div
+                    data-predictions-dropdown
+                    class="absolute z-50 left-0 right-0 mt-2 rounded-2xl bg-zinc-900 border border-zinc-700 shadow-2xl overflow-hidden divide-y divide-zinc-800 max-h-64 overflow-y-auto"
+                  >
+                    <%= if @location_error do %>
+                      <div class="p-3.5 text-xs text-amber-300 bg-amber-950/50 flex items-start gap-2.5">
+                        <span class="text-base">⚠️</span>
+                        <div>{@location_error}</div>
+                      </div>
+                    <% end %>
+
+                    <%= for pred <- @location_predictions do %>
+                      <button
+                        type="button"
+                        data-prediction-item
+                        phx-click="select_location"
+                        phx-value-place-id={pred.place_id}
+                        phx-value-description={pred.description}
+                        class="w-full text-left px-4 py-3 text-xs text-zinc-300 hover:bg-orange-500/20 hover:text-white hover:border-l-4 hover:border-orange-500 hover:!pl-5 flex items-center gap-3.5 transition-all duration-150 border-l-4 border-transparent group/item"
+                      >
+                        <div class="flex items-center justify-center w-7 h-7 rounded-lg bg-zinc-800/80 text-zinc-400 group-hover/item:bg-orange-500/30 group-hover/item:text-orange-400 transition-colors flex-shrink-0">
+                          📍
+                        </div>
+                        <div class="flex-1 min-w-0">
+                          <div class="font-semibold text-zinc-100 group-hover/item:text-white truncate">
+                            {pred.main_text}
+                          </div>
+                          <div class="text-[11px] text-zinc-400 group-hover/item:text-orange-200/80 truncate">
+                            {pred.secondary_text}
+                          </div>
+                        </div>
+                      </button>
+                    <% end %>
+                  </div>
+                <% end %>
+              </div>
+              
+<!-- Price Min -->
+              <div class="lg:col-span-2">
+                <label class="block text-xs font-medium text-zinc-300 mb-1.5">
+                  Preço Mín. (R$)
+                </label>
+                <input
+                  type="number"
+                  name="search[min_price]"
+                  value={@search_form["min_price"]}
+                  placeholder="Ex: 200.000"
+                  class="w-full rounded-xl bg-zinc-950/80 border border-zinc-700/80 text-white font-normal not-italic placeholder:italic placeholder:font-normal placeholder:text-zinc-500 px-3.5 py-3 text-sm focus:border-orange-500 focus:ring-orange-500 focus:outline-none transition"
+                />
+              </div>
+              
+<!-- Price Max -->
+              <div class="lg:col-span-2">
+                <label class="block text-xs font-medium text-zinc-300 mb-1.5">
+                  Preço Máx. (R$)
+                </label>
+                <input
+                  type="number"
+                  name="search[max_price]"
+                  value={@search_form["max_price"]}
+                  placeholder="Ex: 800.000"
+                  class="w-full rounded-xl bg-zinc-950/80 border border-zinc-700/80 text-white font-normal not-italic placeholder:italic placeholder:font-normal placeholder:text-zinc-500 px-3.5 py-3 text-sm focus:border-orange-500 focus:ring-orange-500 focus:outline-none transition"
+                />
+              </div>
+              
+<!-- Bedrooms -->
+              <div class="lg:col-span-3">
+                <label class="block text-xs font-medium text-zinc-300 mb-1.5">Quartos Mín.</label>
+                <input
+                  type="number"
+                  name="search[bedrooms]"
+                  value={@search_form["bedrooms"]}
+                  placeholder="Ex: 2 quartos"
+                  class="w-full rounded-xl bg-zinc-950/80 border border-zinc-700/80 text-white font-normal not-italic placeholder:italic placeholder:font-normal placeholder:text-zinc-500 px-3.5 py-3 text-sm focus:border-orange-500 focus:ring-orange-500 focus:outline-none transition"
+                />
+              </div>
+            </div>
+            
+<!-- Submit Button -->
+            <div class="mt-6 flex justify-end">
+              <button
+                type="submit"
+                class="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600 hover:from-orange-500 hover:to-amber-500 px-8 py-3.5 text-sm font-bold text-white shadow-xl shadow-orange-600/30 transition transform hover:-translate-y-0.5 active:translate-y-0"
+              >
+                🔍 Buscar Imóveis Agora
+              </button>
+            </div>
+          </form>
+          
+<!-- Quick Search Chips -->
+          <div class="mt-6 pt-5 border-t border-zinc-800/80 flex flex-wrap items-center gap-2">
+            <span class="text-xs font-medium text-zinc-400">Sugestões rápidas:</span>
+            <button
+              type="button"
+              phx-click="quick_search"
+              phx-value-query="Moema, São Paulo - SP"
+              phx-value-city="sao-paulo"
+              phx-value-state="sp"
+              class="text-xs px-3 py-1 rounded-full bg-zinc-800/70 hover:bg-orange-500/20 hover:text-white text-zinc-300 border border-zinc-700/60 transition"
+            >
+              📍 Moema, São Paulo
+            </button>
+            <button
+              type="button"
+              phx-click="quick_search"
+              phx-value-query="Copacabana, Rio de Janeiro - RJ"
+              phx-value-city="rio-de-janeiro"
+              phx-value-state="rj"
+              class="text-xs px-3 py-1 rounded-full bg-zinc-800/70 hover:bg-orange-500/20 hover:text-white text-zinc-300 border border-zinc-700/60 transition"
+            >
+              📍 Copacabana, RJ
+            </button>
+            <button
+              type="button"
+              phx-click="quick_search"
+              phx-value-query="Batel, Curitiba - PR"
+              phx-value-city="curitiba"
+              phx-value-state="pr"
+              class="text-xs px-3 py-1 rounded-full bg-zinc-800/70 hover:bg-orange-500/20 hover:text-white text-zinc-300 border border-zinc-700/60 transition"
+            >
+              📍 Batel, Curitiba
+            </button>
+            <button
+              type="button"
+              phx-click="quick_search"
+              phx-value-query="Savassi, Belo Horizonte - MG"
+              phx-value-city="belo-horizonte"
+              phx-value-state="mg"
+              class="text-xs px-3 py-1 rounded-full bg-zinc-800/70 hover:bg-orange-500/20 hover:text-white text-zinc-300 border border-zinc-700/60 transition"
+            >
+              📍 Savassi, BH
+            </button>
+          </div>
+        </div>
+        
+<!-- Value Proposition Highlights -->
+        <div class="mt-20 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto text-left">
+          <div class="rounded-2xl bg-zinc-900/50 border border-zinc-800 p-6 backdrop-blur">
+            <div class="w-10 h-10 rounded-xl bg-orange-500/10 text-orange-400 flex items-center justify-center text-xl mb-4">
+              ⚡
+            </div>
+            <h3 class="text-sm font-bold text-white mb-1.5">Busca Unificada</h3>
+            <p class="text-xs text-zinc-400 leading-relaxed">
+              Consolidamos ofertas da OLX e portais líderes para você não perder tempo abrindo dezenas de abas.
+            </p>
+          </div>
+
+          <div class="rounded-2xl bg-zinc-900/50 border border-zinc-800 p-6 backdrop-blur">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center text-xl mb-4">
+              🎯
+            </div>
+            <h3 class="text-sm font-bold text-white mb-1.5">Filtro Geográfico Real</h3>
+            <p class="text-xs text-zinc-400 leading-relaxed">
+              Pesquise pelo bairro ou cidade exata com autocomplete inteligente, eliminando anúncios fora de rota.
+            </p>
+          </div>
+
+          <div class="rounded-2xl bg-zinc-900/50 border border-zinc-800 p-6 backdrop-blur">
+            <div class="w-10 h-10 rounded-xl bg-orange-500/10 text-orange-400 flex items-center justify-center text-xl mb-4">
+              📸
+            </div>
+            <h3 class="text-sm font-bold text-white mb-1.5">Galeria Fluida</h3>
+            <p class="text-xs text-zinc-400 leading-relaxed">
+              Fotos pré-carregadas e navegação lateral contínua sem travamentos ou esperas entre imagens.
+            </p>
+          </div>
+        </div>
+      </main>
+      
+<!-- Footer -->
+      <footer class="relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 border-t border-zinc-800/60 mt-16 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
+        <p>© 2026 Kfofo. O seu agregador inteligente de imóveis.</p>
+        <div class="flex items-center gap-4">
+          <span>Feito com Elixir & Phoenix LiveView</span>
+        </div>
+      </footer>
+    </div>
+  <% else %>
+    <!-- ==================== SPLIT RESULTS PAGE ==================== -->
+    <div class="min-h-screen bg-zinc-950 flex flex-col">
+      <!-- Top Navbar for Results -->
+      <header class="sticky top-0 z-40 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800/80 px-4 sm:px-6 lg:px-10 py-3.5">
+        <div class="max-w-[1800px] mx-auto flex items-center justify-between gap-4">
+          <div class="flex items-center gap-4">
+            <.link patch={~p"/"} class="flex items-center gap-2 group">
+              <div class="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow shadow-orange-500/25">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2.2"
                 >
-                  <%= for {img_url, idx} <- Enum.with_index(property_images(property.images)) do %>
-                    <div data-slide class="w-full h-full flex-shrink-0 relative">
-                      <img
-                        src={img_url}
-                        alt={"#{property.title} - Foto #{idx + 1}"}
-                        referrerpolicy="no-referrer"
-                        loading="eager"
-                        onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&auto=format&fit=crop&q=80';"
-                        class="w-full h-full object-cover"
-                      />
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                  />
+                </svg>
+              </div>
+              <span class="text-xl font-black tracking-tight text-white flex items-center">
+                Kfofo<span class="text-orange-500 text-2xl leading-none">.</span>
+              </span>
+            </.link>
+
+            <div class="hidden sm:flex items-center gap-2 text-xs bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-full text-zinc-300">
+              <span class="text-orange-400">📍</span>
+              <span class="font-medium truncate max-w-xs">
+                {@search_form["location_query"] || "Brasil"}
+              </span>
+              <span class="text-zinc-600">•</span>
+              <span class="text-orange-400 font-semibold uppercase text-[10px]">
+                {if @search_form["type"] == "aluguel", do: "Aluguel", else: "Venda"}
+              </span>
+            </div>
+          </div>
+
+          <.link
+            patch={~p"/"}
+            class="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-300 hover:text-white bg-zinc-900 hover:bg-zinc-800 px-3.5 py-1.5 rounded-xl border border-zinc-800 transition"
+          >
+            <span>←</span> Nova Pesquisa
+          </.link>
+        </div>
+      </header>
+      
+<!-- Main Layout with Sidebar and Content -->
+      <div class="flex-1 max-w-[1800px] w-full mx-auto px-4 sm:px-6 lg:px-10 py-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <!-- ================= LEFT SIDEBAR FILTERS ================= -->
+          <aside class="lg:col-span-4 xl:col-span-3 2xl:col-span-3 lg:sticky lg:top-20 space-y-4">
+            <div class="rounded-3xl bg-zinc-900/90 border border-zinc-800/90 p-5 sm:p-6 shadow-xl backdrop-blur-md">
+              <div class="flex items-center justify-between mb-4 pb-3 border-b border-zinc-800">
+                <h2 class="text-sm font-bold text-white flex items-center gap-2">
+                  <span>⚙️</span> Filtros de Busca
+                </h2>
+                <button
+                  type="button"
+                  phx-click="clear_filters"
+                  class="text-[11px] text-zinc-400 hover:text-orange-400 transition"
+                >
+                  Limpar
+                </button>
+              </div>
+
+              <form phx-submit="search" class="space-y-4">
+                <input type="hidden" name="search[state]" value={@search_form["state"]} />
+                <input type="hidden" name="search[city]" value={@search_form["city"]} />
+                <input
+                  type="hidden"
+                  name="search[neighborhood]"
+                  value={@search_form["neighborhood"]}
+                />
+                
+<!-- Location Autocomplete in Sidebar -->
+                <div
+                  id="sidebar-location-autocomplete-container"
+                  phx-hook="LocationAutocomplete"
+                  class="relative"
+                >
+                  <label class="block text-xs font-medium text-zinc-300 mb-1.5">
+                    Localização
+                  </label>
+                  <div class="relative">
+                    <input
+                      type="text"
+                      name="search[location_query]"
+                      value={@search_form["location_query"]}
+                      autocomplete="off"
+                      placeholder="Bairro ou cidade..."
+                      class="w-full rounded-xl bg-zinc-950/80 border border-zinc-700/80 text-white font-normal not-italic placeholder:italic placeholder:font-normal placeholder:text-zinc-500 pl-9 pr-3 py-2.5 text-xs focus:border-orange-500 focus:ring-orange-500 focus:outline-none transition shadow-inner"
+                    />
+                    <span class="absolute left-3 top-2.5 text-zinc-400 text-xs">📍</span>
+                  </div>
+
+                  <%= if @show_predictions && (@location_predictions != [] || !is_nil(@location_error)) do %>
+                    <div
+                      data-predictions-dropdown
+                      class="absolute z-50 left-0 right-0 mt-2 rounded-2xl bg-zinc-900 border border-zinc-700 shadow-2xl overflow-hidden divide-y divide-zinc-800 max-h-60 overflow-y-auto"
+                    >
+                      <%= if @location_error do %>
+                        <div class="p-3 text-xs text-amber-300 bg-amber-950/50 flex items-start gap-2">
+                          <span>⚠️</span>
+                          <div>{@location_error}</div>
+                        </div>
+                      <% end %>
+
+                      <%= for pred <- @location_predictions do %>
+                        <button
+                          type="button"
+                          data-prediction-item
+                          phx-click="select_location"
+                          phx-value-place-id={pred.place_id}
+                          phx-value-description={pred.description}
+                          class="w-full text-left px-3.5 py-2.5 text-xs text-zinc-300 hover:bg-orange-500/20 hover:text-white hover:border-l-4 hover:border-orange-500 hover:!pl-4 flex items-center gap-2.5 transition-all duration-150 border-l-4 border-transparent group/item"
+                        >
+                          <div class="flex-1 min-w-0">
+                            <div class="font-semibold text-zinc-100 group-hover/item:text-white truncate">
+                              {pred.main_text}
+                            </div>
+                            <div class="text-[10px] text-zinc-400 truncate">
+                              {pred.secondary_text}
+                            </div>
+                          </div>
+                        </button>
+                      <% end %>
                     </div>
                   <% end %>
                 </div>
                 
-<!-- Price Badge -->
-                <div class="absolute top-3.5 right-3.5 z-20 bg-zinc-950/85 backdrop-blur-md text-white px-3.5 py-1.5 rounded-full text-sm font-bold shadow-lg border border-white/10 pointer-events-none">
-                  {format_price(property.price)}
+<!-- Business Type -->
+                <div>
+                  <label class="block text-xs font-medium text-zinc-300 mb-1.5">
+                    Tipo de Negócio
+                  </label>
+                  <select
+                    name="search[type]"
+                    class="w-full rounded-xl bg-zinc-950/80 border border-zinc-700/80 text-white font-normal not-italic px-3 py-2.5 text-xs focus:border-orange-500 focus:ring-orange-500 focus:outline-none transition"
+                  >
+                    <option value="venda" selected={@search_form["type"] == "venda"}>
+                      Comprar (Venda)
+                    </option>
+                    <option value="aluguel" selected={@search_form["type"] == "aluguel"}>
+                      Alugar
+                    </option>
+                  </select>
                 </div>
                 
-<!-- Portal Badge -->
-                <div class="absolute top-3.5 left-3.5 z-20 bg-orange-600 text-white px-3 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider shadow-md pointer-events-none">
-                  OLX
-                </div>
-
-                <%= if length(property_images(property.images)) > 1 do %>
-                  <!-- Navigation Buttons -->
-                  <button
-                    type="button"
-                    data-action="prev"
-                    aria-label="Foto anterior"
-                    class="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-zinc-900/75 hover:bg-zinc-900 text-white flex items-center justify-center backdrop-blur-sm shadow-lg opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all duration-200 hover:scale-110 active:scale-95 border border-white/10"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      class="h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2.5"
-                        d="M15 19l-7-7 7-7"
-                      />
-                    </svg>
-                  </button>
-                  <button
-                    type="button"
-                    data-action="next"
-                    aria-label="Próxima foto"
-                    class="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-zinc-900/75 hover:bg-zinc-900 text-white flex items-center justify-center backdrop-blur-sm shadow-lg opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all duration-200 hover:scale-110 active:scale-95 border border-white/10"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      class="h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2.5"
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </button>
-                  
-<!-- Indicators (Dots) -->
-                  <div class="absolute bottom-3 inset-x-0 z-20 flex items-center justify-center gap-1.5 pointer-events-none drop-shadow">
-                    <%= for idx <- 0..min(length(property_images(property.images)) - 1, 6) do %>
-                      <span
-                        data-bullet
-                        class={"h-1.5 rounded-full transition-all duration-300 #{if idx == 0, do: "w-4 bg-white", else: "w-1.5 bg-white/50"}"}
-                      >
-                      </span>
-                    <% end %>
+<!-- Price Range -->
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-xs font-medium text-zinc-300 mb-1.5">
+                      Preço Mín.
+                    </label>
+                    <input
+                      type="number"
+                      name="search[min_price]"
+                      value={@search_form["min_price"]}
+                      placeholder="R$ Mín"
+                      class="w-full rounded-xl bg-zinc-950/80 border border-zinc-700/80 text-white font-normal not-italic placeholder:italic placeholder:font-normal placeholder:text-zinc-500 px-3 py-2.5 text-xs focus:border-orange-500 focus:ring-orange-500 focus:outline-none transition"
+                    />
                   </div>
-                  
-<!-- Counter -->
-                  <div class="absolute bottom-3 right-3.5 z-20 bg-zinc-950/75 backdrop-blur-md text-white/90 text-[11px] font-medium px-2.5 py-0.5 rounded-full shadow border border-white/10 pointer-events-none">
-                    📷 <span data-counter>1/{length(property_images(property.images))}</span>
+                  <div>
+                    <label class="block text-xs font-medium text-zinc-300 mb-1.5">
+                      Preço Máx.
+                    </label>
+                    <input
+                      type="number"
+                      name="search[max_price]"
+                      value={@search_form["max_price"]}
+                      placeholder="R$ Máx"
+                      class="w-full rounded-xl bg-zinc-950/80 border border-zinc-700/80 text-white font-normal not-italic placeholder:italic placeholder:font-normal placeholder:text-zinc-500 px-3 py-2.5 text-xs focus:border-orange-500 focus:ring-orange-500 focus:outline-none transition"
+                    />
+                  </div>
+                </div>
+                
+<!-- Bedrooms -->
+                <div>
+                  <label class="block text-xs font-medium text-zinc-300 mb-1.5">
+                    Quartos Mínimos
+                  </label>
+                  <input
+                    type="number"
+                    name="search[bedrooms]"
+                    value={@search_form["bedrooms"]}
+                    placeholder="Ex: 2"
+                    class="w-full rounded-xl bg-zinc-950/80 border border-zinc-700/80 text-white font-normal not-italic placeholder:italic placeholder:font-normal placeholder:text-zinc-500 px-3 py-2.5 text-xs focus:border-orange-500 focus:ring-orange-500 focus:outline-none transition"
+                  />
+                </div>
+                
+<!-- Submit Button -->
+                <button
+                  type="submit"
+                  disabled={@loading}
+                  class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 py-3 text-xs font-bold text-white shadow-lg shadow-orange-600/30 transition disabled:opacity-50 active:scale-98"
+                >
+                  <%= if @loading do %>
+                    <svg
+                      class="animate-spin h-3.5 w-3.5 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                      >
+                      </circle>
+                      <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      >
+                      </path>
+                    </svg>
+                    Buscando...
+                  <% else %>
+                    Aplicar Filtros
+                  <% end %>
+                </button>
+              </form>
+            </div>
+          </aside>
+          
+<!-- ================= RIGHT RESULTS CONTENT ================= -->
+          <main class="lg:col-span-8 xl:col-span-9 2xl:col-span-9 space-y-6">
+            <!-- Results Header -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-zinc-800/80">
+              <div>
+                <h1 class="text-xl font-bold text-white tracking-tight">
+                  Imóveis para {if @search_form["type"] == "aluguel",
+                    do: "Alugar",
+                    else: "Comprar"}
+                  <%= if @search_form["location_query"] != "" do %>
+                    <span class="text-zinc-400 font-normal">
+                      em {@search_form["location_query"]}
+                    </span>
+                  <% end %>
+                </h1>
+                <p class="text-xs text-zinc-400 mt-0.5">
+                  Resultados agregados e atualizados em tempo real
+                </p>
+              </div>
+
+              <%= if !@loading do %>
+                <div class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-300">
+                  <span class="w-2 h-2 rounded-full bg-orange-500"></span>
+                  <span>{@total} {if @total == 1, do: "imóvel", else: "imóveis"}</span>
+                </div>
+              <% end %>
+            </div>
+            
+<!-- Error Banner -->
+            <%= if @error_message do %>
+              <div class="rounded-2xl border border-red-500/30 bg-red-950/40 p-4 text-sm text-red-200 flex items-center gap-3 shadow-lg">
+                <span class="text-xl">⚠️</span>
+                <div>{@error_message}</div>
+              </div>
+            <% end %>
+            
+<!-- Loading Skeleton -->
+            <%= if @loading do %>
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5 animate-pulse">
+                <%= for _ <- 1..8 do %>
+                  <div class="rounded-3xl border border-zinc-800 bg-zinc-900/60 overflow-hidden h-[380px] flex flex-col justify-between">
+                    <div class="h-48 bg-zinc-800/60"></div>
+                    <div class="p-4 space-y-3">
+                      <div class="h-4 bg-zinc-800 rounded w-3/4"></div>
+                      <div class="h-3 bg-zinc-800 rounded w-1/2"></div>
+                      <div class="h-9 bg-zinc-800/40 rounded-xl mt-4"></div>
+                    </div>
                   </div>
                 <% end %>
               </div>
-
-              <div class="p-6">
-                <h3 class="text-base font-bold text-white line-clamp-2 mb-2 group-hover:text-orange-400 transition">
-                  {property.title}
-                </h3>
-
-                <div class="text-xs text-zinc-400 mb-5 flex items-center gap-1.5">
-                  <span class="text-orange-400">📍</span>
-                  <span>
-                    {property.location.neighborhood || property.location.city ||
-                      "Localização não informada"}
-                    <%= if property.location.state do %>
-                      , {property.location.state}
-                    <% end %>
-                  </span>
+            <% else %>
+              <!-- Empty State -->
+              <%= if @properties == [] && is_nil(@error_message) do %>
+                <div class="text-center py-20 rounded-3xl border border-dashed border-zinc-800 bg-zinc-900/30 p-8">
+                  <div class="text-4xl mb-3">🏡</div>
+                  <h3 class="text-base font-bold text-white mb-1">
+                    Nenhum imóvel encontrado nesta região
+                  </h3>
+                  <p class="text-xs text-zinc-400 max-w-md mx-auto">
+                    Tente expandir o raio de busca, ajustar os filtros de valor ou pesquisar por outro bairro ou cidade.
+                  </p>
                 </div>
+              <% else %>
+                <!-- Property Cards Grid (4 per row on 2xl) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5">
+                  <%= for property <- @properties do %>
+                    <div class="group rounded-3xl border border-zinc-800/80 bg-zinc-900/90 overflow-hidden shadow-xl hover:shadow-2xl hover:border-zinc-700 transition duration-300 flex flex-col justify-between">
+                      <div>
+                        <div
+                          id={"carousel-#{property.external_id}"}
+                          phx-hook="CardCarousel"
+                          class="relative h-48 sm:h-52 w-full bg-zinc-950 overflow-hidden select-none"
+                        >
+                          <!-- Sliding Track -->
+                          <div
+                            data-track
+                            class="flex w-full h-full transition-transform duration-300 ease-out"
+                            style="transform: translateX(0%);"
+                          >
+                            <%= for {img_url, idx} <- Enum.with_index(property_images(property.images)) do %>
+                              <div data-slide class="w-full h-full flex-shrink-0 relative">
+                                <img
+                                  src={img_url}
+                                  alt={"#{property.title} - Foto #{idx + 1}"}
+                                  referrerpolicy="no-referrer"
+                                  loading="eager"
+                                  onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&auto=format&fit=crop&q=80';"
+                                  class="w-full h-full object-cover"
+                                />
+                              </div>
+                            <% end %>
+                          </div>
+                          
+<!-- Price Badge -->
+                          <div class="absolute top-2.5 right-2.5 z-20 bg-zinc-950/85 backdrop-blur-md text-white px-2.5 py-1 rounded-full text-xs font-bold shadow-lg border border-white/10 pointer-events-none">
+                            {format_price(property.price)}
+                          </div>
+                          
+<!-- Portal Badge -->
+                          <div class="absolute top-2.5 left-2.5 z-20 bg-orange-600 text-white px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider shadow-md pointer-events-none">
+                            OLX
+                          </div>
 
-                <div class="grid grid-cols-4 gap-2 py-3 border-y border-zinc-800/80 text-center text-xs text-zinc-300 mb-5 bg-zinc-950/40 rounded-xl">
-                  <div>
-                    <div class="font-bold text-white text-sm">
-                      {property.details.bedrooms || "-"}
+                          <%= if length(property_images(property.images)) > 1 do %>
+                            <!-- Navigation Buttons -->
+                            <button
+                              type="button"
+                              data-action="prev"
+                              aria-label="Foto anterior"
+                              class="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-zinc-900/75 hover:bg-zinc-900 text-white flex items-center justify-center backdrop-blur-sm shadow-lg opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all duration-200 hover:scale-110 active:scale-95 border border-white/10"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="h-3.5 w-3.5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  stroke-width="2.5"
+                                  d="M15 19l-7-7 7-7"
+                                />
+                              </svg>
+                            </button>
+                            <button
+                              type="button"
+                              data-action="next"
+                              aria-label="Próxima foto"
+                              class="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-zinc-900/75 hover:bg-zinc-900 text-white flex items-center justify-center backdrop-blur-sm shadow-lg opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all duration-200 hover:scale-110 active:scale-95 border border-white/10"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="h-3.5 w-3.5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  stroke-width="2.5"
+                                  d="M9 5l7 7-7 7"
+                                />
+                              </svg>
+                            </button>
+                            
+<!-- Indicators (Dots) -->
+                            <div class="absolute bottom-2 inset-x-0 z-20 flex items-center justify-center gap-1 pointer-events-none drop-shadow">
+                              <%= for idx <- 0..min(length(property_images(property.images)) - 1, 5) do %>
+                                <span
+                                  data-bullet
+                                  class={"h-1 rounded-full transition-all duration-300 #{if idx == 0, do: "w-3 bg-white", else: "w-1 bg-white/50"}"}
+                                >
+                                </span>
+                              <% end %>
+                            </div>
+                            
+<!-- Counter -->
+                            <div class="absolute bottom-2 right-2.5 z-20 bg-zinc-950/75 backdrop-blur-md text-white/90 text-[10px] font-medium px-1.5 py-0.5 rounded-full shadow border border-white/10 pointer-events-none">
+                              📷
+                              <span data-counter>
+                                1/{length(property_images(property.images))}
+                              </span>
+                            </div>
+                          <% end %>
+                        </div>
+
+                        <div class="p-4 sm:p-4.5">
+                          <h3 class="text-sm font-bold text-white line-clamp-2 mb-1.5 group-hover:text-orange-400 transition">
+                            {property.title}
+                          </h3>
+
+                          <div class="text-xs text-zinc-400 mb-3 flex items-center gap-1.5 truncate">
+                            <span class="text-orange-400 flex-shrink-0">📍</span>
+                            <span class="truncate">
+                              {property.location.neighborhood || property.location.city ||
+                                "Localização não informada"}
+                              <%= if property.location.state do %>
+                                , {property.location.state}
+                              <% end %>
+                            </span>
+                          </div>
+
+                          <div class="grid grid-cols-4 gap-1 py-2 border-y border-zinc-800/80 text-center text-xs text-zinc-300 mb-3 bg-zinc-950/40 rounded-xl">
+                            <div>
+                              <div class="font-bold text-white text-xs">
+                                {property.details.bedrooms || "-"}
+                              </div>
+                              <div class="text-[9px] text-zinc-500">Quartos</div>
+                            </div>
+                            <div>
+                              <div class="font-bold text-white text-xs">
+                                {property.details.bathrooms || "-"}
+                              </div>
+                              <div class="text-[9px] text-zinc-500">Banh.</div>
+                            </div>
+                            <div>
+                              <div class="font-bold text-white text-xs">
+                                {property.details.garage_spaces || "-"}
+                              </div>
+                              <div class="text-[9px] text-zinc-500">Vagas</div>
+                            </div>
+                            <div>
+                              <div class="font-bold text-white text-xs">
+                                {if property.details.area_sqm,
+                                  do: "#{property.details.area_sqm}m²",
+                                  else: "-"}
+                              </div>
+                              <div class="text-[9px] text-zinc-500">Área</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="px-4 pb-4 pt-0">
+                        <%= if property.url != "" do %>
+                          <a
+                            href={property.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="block w-full text-center rounded-xl bg-zinc-800 hover:bg-orange-600 hover:text-white py-2 text-xs font-semibold text-zinc-200 border border-zinc-700/60 transition shadow-sm"
+                          >
+                            Ver no site da OLX ↗
+                          </a>
+                        <% end %>
+                      </div>
                     </div>
-                    <div class="text-[10px] text-zinc-500">Quartos</div>
-                  </div>
-                  <div>
-                    <div class="font-bold text-white text-sm">
-                      {property.details.bathrooms || "-"}
-                    </div>
-                    <div class="text-[10px] text-zinc-500">Banh.</div>
-                  </div>
-                  <div>
-                    <div class="font-bold text-white text-sm">
-                      {property.details.garage_spaces || "-"}
-                    </div>
-                    <div class="text-[10px] text-zinc-500">Vagas</div>
-                  </div>
-                  <div>
-                    <div class="font-bold text-white text-sm">
-                      {if property.details.area_sqm,
-                        do: "#{property.details.area_sqm}m²",
-                        else: "-"}
-                    </div>
-                    <div class="text-[10px] text-zinc-500">Área</div>
-                  </div>
+                  <% end %>
                 </div>
-              </div>
-            </div>
-
-            <div class="px-6 pb-6 pt-0">
-              <%= if property.url != "" do %>
-                <a
-                  href={property.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="block w-full text-center rounded-xl bg-zinc-800 hover:bg-orange-600 hover:text-white py-2.5 text-xs font-semibold text-zinc-200 border border-zinc-700/60 transition shadow-sm"
-                >
-                  Ver no site da OLX ↗
-                </a>
               <% end %>
-            </div>
-          </div>
-        <% end %>
+            <% end %>
+          </main>
+        </div>
       </div>
-    <% end %>
+    </div>
   <% end %>
 </div>

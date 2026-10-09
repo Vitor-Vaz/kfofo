@@ -57,8 +57,8 @@ O **kfofo** é um agregador inteligente de anúncios de imóveis (casas e aparta
   - 🟡 **Zap Imóveis** (Fase 2).
   - 🟠 **QuintoAndar** (Fase 3).
   - 🔴 **Imovelweb** (Fase 4).
-- **Refinamento de Scraping / Filtro de Região e Cidade (Ex: Nova Iguaçu / RJ)**:
-  - Investigar e ajustar a query/filtros de cidades da Baixada Fluminense / Região Metropolitana (ex: `properties?city=nova-iguacu&location_query=Nova+Iguaçu%2C+RJ%2C+Brasil&state=rj&type=aluguel`) para evitar que a OLX retorne anúncios genéricos ou patrocinados da capital (Rio de Janeiro) em vez do município pesquisado.
+- **Refinamento de Scraping / Filtro de Região e Cidade (Ex: Nova Iguaçu, São João de Meriti, Resende / RJ)**:
+  - Mapear e normalizar a hierarquia de mesorregiões e municípios da OLX para estados como RJ e SP (ex: Baixada/Metropolitana `/rio-de-janeiro-e-regiao/nova-iguacu`, Sul Fluminense `/serra-angra-dos-reis-e-regiao/resende`, Região dos Lagos, etc.) ou aplicar query param de busca direta por cidade (`q=...`), evitando que a OLX receba rotas sem a mesorregião e redirecione para anúncios genéricos da capital.
 - **Filtros Avançados & Ordenação**:
   - Ordenação por preço (menor/maior), mais recentes e filtros adicionais de vagas e banheiros.
 - **Destaque de Visualizações ("Nunca Visualizados" vs "Já Visualizados")**:
@@ -68,7 +68,10 @@ O **kfofo** é um agregador inteligente de anúncios de imóveis (casas e aparta
 
 ---
 
-### 🔵 3. Longo Prazo (Autenticação & Alertas)
+### 🔵 3. Longo Prazo (Autenticação, Tendências & Alertas)
+- **Sugestões Rápidas Dinâmicas (Top Buscas / Trending Searches)**:
+  - Tabela no banco de dados (`searches_analytics` / `popular_locations`) para contabilizar os termos, bairros e cidades mais buscados pelos usuários da plataforma.
+  - Alimentar dinamicamente os chips de "Sugestões Rápidas" da página inicial com as localizações em alta no momento.
 - **Sistema de Autenticação (Google Login)**:
   - Login social com Google OAuth2 para sincronização de preferências entre dispositivos.
 - **Sistema de Notificações de Novos Anúncios**:
@@ -89,9 +92,10 @@ O **kfofo** é um agregador inteligente de anúncios de imóveis (casas e aparta
 | **Limpeza de Layout** | Remoção do header padrão Phoenix e restrição `max-w-2xl` | ⚡ Imediato | 🟢 **Concluído** |
 | **Persistência da Busca**| Salvar filtros em cache/cookie/localStorage contra F5 | ⚡ Imediato | 🟢 **Concluído** |
 | **Estilo da Busca** | Texto padrão em itálico e mais claro na caixa de texto | ⚡ Imediato | 🟢 **Concluído** |
-| **Filtro Região/Cidade**| Ajuste de query OLX para Baixada/Municípios (Nova Iguaçu) | 🟡 Médio Prazo | ⏳ *Backlog* |
-| **Nova Jornada (Hero)** | 1º acesso com busca centralizada e imagem de fundo | 🟡 Médio Prazo | ⏳ *Planejado* |
-| **Layout Resultados** | Filtros na barra lateral e listagem de cards ao lado | 🟡 Médio Prazo | ⏳ *Planejado* |
+| **Filtro Região/Cidade**| Mapeamento de regiões OLX (Nova Iguaçu, Meriti, Resende) | 🟡 Médio Prazo | ⏳ *Backlog* |
+| **Nova Jornada (Hero)** | 1º acesso com busca centralizada e imagem de fundo | 🟡 Médio Prazo | 🟢 **Concluído** |
+| **Layout Resultados** | Filtros na barra lateral e listagem de cards ao lado | 🟡 Médio Prazo | 🟢 **Concluído** |
 | **Página de Detalhes**| Página interna de anúncio com ficha e galeria completa | 🟡 Médio Prazo | ⏳ *Planejado* |
 | **Novos Portais** | Integrações com Zap Imóveis, QuintoAndar e Imovelweb | 🟡 Médio Prazo | ⏳ *Planejado* |
+| **Top Buscas Dinâmicas**| Tabela de analytics para alimentar sugestões rápidas em alta | 🔵 Longo Prazo | ⏳ *Planejado* |
 | **Auth & Alertas** | Google OAuth2 e notificações de novos imóveis | 🔵 Longo Prazo | ⏳ *Planejado* |
