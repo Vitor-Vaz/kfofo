@@ -38,6 +38,13 @@ case {config_env(), System.get_env("OLX_BASE_URL")} do
   {_, url} -> config :kfofo, :olx_scraper, base_url: url
 end
 
+case {config_env(), System.get_env("QUINTOANDAR_BASE_URL")} do
+  {:test, _} -> :ok
+  {_, nil} -> :ok
+  {_, ""} -> :ok
+  {_, url} -> config :kfofo, :quintoandar_scraper, base_url: url
+end
+
 case System.get_env("PHX_SERVER") do
   nil -> :ok
   "" -> :ok
