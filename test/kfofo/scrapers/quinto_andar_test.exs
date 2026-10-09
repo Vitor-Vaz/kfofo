@@ -186,5 +186,71 @@ defmodule Kfofo.Scrapers.QuintoAndarTest do
       assert res.total == 1
       assert hd(res.properties).external_id == "quintoandar-1"
     end
+
+    test "filters by property_type strictly in memory, excluding apartments when searching for casas" do
+      html = """
+      <html>
+        <head>
+          <script id="__NEXT_DATA__" type="application/json">
+            {
+              "props": {
+                "pageProps": {
+                  "initialState": {
+                    "houses": {
+                      "10": {
+                        "id": "10",
+                        "type": "Apartamento",
+                        "houseType": "APARTMENT",
+                        "rentPrice": 2500,
+                        "forRent": true,
+                        "bedrooms": 2,
+                        "neighbourhood": "Pinheiros",
+                        "address": {"city": "São Paulo"}
+                      },
+                      "20": {
+                        "id": "20",
+                        "type": "Casa em condomínio",
+                        "houseType": "CONDO_HOUSE",
+                        "rentPrice": 4500,
+                        "forRent": true,
+                        "bedrooms": 3,
+                        "neighbourhood": "Morumbi",
+                        "address": {"city": "São Paulo"}
+                      },
+                      "30": {
+                        "id": "30",
+                        "type": "Sobrado",
+                        "houseType": "HOUSE",
+                        "rentPrice": 3800,
+                        "forRent": true,
+                        "bedrooms": 3,
+                        "neighbourhood": "Vila Mariana",
+                        "address": {"city": "São Paulo"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          </script>
+        </head>
+        <body></body>
+      </html>
+      """
+
+      custom_client = fn _url, _headers -> {:ok, html} end
+
+      assert {:ok, res} =
+               QuintoAndar.fetch_properties(%{
+                 http_client: custom_client,
+                 property_type: "casa"
+               })
+
+      assert res.total == 2
+      ids = Enum.map(res.properties, & &1.external_id)
+      assert "quintoandar-20" in ids
+      assert "quintoandar-30" in ids
+      refute "quintoandar-10" in ids
+    end
   end
 end

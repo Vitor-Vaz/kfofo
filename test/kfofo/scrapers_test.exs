@@ -124,5 +124,55 @@ defmodule Kfofo.ScrapersTest do
       assert res.total == 1
       assert hd(res.properties).external_id == "quintoandar-555"
     end
+
+    test "filters by source 'olx' only executing and returning OLX scraper" do
+      mock_olx = fn _opts ->
+        {:ok, %{properties: [%{external_id: "olx-10", title: "OLX Prop", source: "olx"}]}}
+      end
+
+      mock_quintoandar = fn _opts ->
+        {:ok, %{properties: [%{external_id: "qa-20", title: "QA Prop", source: "quintoandar"}]}}
+      end
+
+      custom_scrapers = [
+        {:olx, mock_olx},
+        {:quintoandar, mock_quintoandar}
+      ]
+
+      assert {:ok, res} =
+               Scrapers.fetch_all_properties(%{
+                 scrapers: custom_scrapers,
+                 source: "olx"
+               })
+
+      assert res.total == 1
+      assert hd(res.properties).external_id == "olx-10"
+      assert hd(res.properties).source == "olx"
+    end
+
+    test "filters by source 'quintoandar' only executing and returning QuintoAndar scraper" do
+      mock_olx = fn _opts ->
+        {:ok, %{properties: [%{external_id: "olx-10", title: "OLX Prop", source: "olx"}]}}
+      end
+
+      mock_quintoandar = fn _opts ->
+        {:ok, %{properties: [%{external_id: "qa-20", title: "QA Prop", source: "quintoandar"}]}}
+      end
+
+      custom_scrapers = [
+        {:olx, mock_olx},
+        {:quintoandar, mock_quintoandar}
+      ]
+
+      assert {:ok, res} =
+               Scrapers.fetch_all_properties(%{
+                 scrapers: custom_scrapers,
+                 source: "quintoandar"
+               })
+
+      assert res.total == 1
+      assert hd(res.properties).external_id == "qa-20"
+      assert hd(res.properties).source == "quintoandar"
+    end
   end
 end

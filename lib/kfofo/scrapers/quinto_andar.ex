@@ -38,6 +38,7 @@ defmodule Kfofo.Scrapers.QuintoAndar do
 
   defp apply_in_memory_filters(properties, opts) when is_list(properties) and is_map(opts) do
     properties
+    |> filter_by_property_type(opts[:property_type] || opts["property_type"])
     |> filter_by_min_price(opts[:min_price] || opts["min_price"])
     |> filter_by_max_price(opts[:max_price] || opts["max_price"])
     |> filter_by_bedrooms(opts[:bedrooms] || opts["bedrooms"])
@@ -45,6 +46,71 @@ defmodule Kfofo.Scrapers.QuintoAndar do
   end
 
   defp apply_in_memory_filters(properties, _), do: properties
+
+  defp filter_by_property_type(properties, nil), do: properties
+  defp filter_by_property_type(properties, ""), do: properties
+
+  defp filter_by_property_type(properties, target_type) do
+    case normalize_target_type(target_type) do
+      nil ->
+        properties
+
+      target ->
+        Enum.filter(properties, &matches_target_property_type?(&1, target))
+    end
+  end
+
+  defp normalize_target_type("casa"), do: "casa"
+  defp normalize_target_type("casas"), do: "casa"
+  defp normalize_target_type(:casa), do: "casa"
+  defp normalize_target_type("apartamento"), do: "apartamento"
+  defp normalize_target_type("apartamentos"), do: "apartamento"
+  defp normalize_target_type(:apartamento), do: "apartamento"
+  defp normalize_target_type("quarto"), do: "quarto"
+  defp normalize_target_type("quartos"), do: "quarto"
+  defp normalize_target_type(:quarto), do: "quarto"
+  defp normalize_target_type("kitnet"), do: "quarto"
+  defp normalize_target_type("studio"), do: "quarto"
+
+  defp normalize_target_type(str) when is_binary(str) do
+    str
+    |> String.trim()
+    |> String.downcase()
+    |> normalize_target_type()
+  rescue
+    _ -> nil
+  end
+
+  defp normalize_target_type(_), do: nil
+
+  defp matches_target_property_type?(prop, target) do
+    prop_type = prop[:property_type] || get_in(prop, [:details, :property_type])
+
+    case prop_type do
+      val when is_binary(val) and val != "" ->
+        val == target
+
+      _ ->
+        title_matches_type?(prop[:title] || "", target)
+    end
+  end
+
+  defp title_matches_type?(title, "casa") do
+    lower = String.downcase(title)
+    String.contains?(lower, ["casa", "sobrado"]) and not String.contains?(lower, "apartamento")
+  end
+
+  defp title_matches_type?(title, "apartamento") do
+    lower = String.downcase(title)
+    String.contains?(lower, ["apartamento", "apto", "cobertura", "flat", "loft"])
+  end
+
+  defp title_matches_type?(title, "quarto") do
+    lower = String.downcase(title)
+    String.contains?(lower, ["kitnet", "studio", "quarto"])
+  end
+
+  defp title_matches_type?(_title, _), do: true
 
   defp filter_by_min_price(properties, nil), do: properties
   defp filter_by_min_price(properties, ""), do: properties
