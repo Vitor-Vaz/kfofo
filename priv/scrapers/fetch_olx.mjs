@@ -7,6 +7,21 @@ process.stdout.on('error', (err) => {
   }
 });
 
+function resolveProxyUrl(raw) {
+  if (!raw || raw.trim() === '') return null;
+  const trimmed = raw.trim();
+  if (
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('https://') ||
+    trimmed.startsWith('socks5://') ||
+    trimmed.startsWith('socks4://')
+  ) {
+    return trimmed;
+  }
+  // If user provided a direct ScraperAPI key (e.g. 32-char hex string)
+  return `http://scraperapi.country_code=br:${trimmed}@proxy-server.scraperapi.com:8001`;
+}
+
 async function main() {
   const targetUrl = process.argv[2];
   if (!targetUrl) {
@@ -14,12 +29,18 @@ async function main() {
     process.exit(1);
   }
 
-  const proxyUrl = process.env.SCRAPER_PROXY_URL || process.env.HTTP_PROXY || process.env.HTTPS_PROXY;
+  const rawProxy =
+    process.env.SCRAPER_PROXY_URL ||
+    process.env.SCRAPERAPI_KEY ||
+    process.env.HTTP_PROXY ||
+    process.env.HTTPS_PROXY;
+
+  const proxyUrl = resolveProxyUrl(rawProxy);
 
   const requestOptions = {
     url: targetUrl,
     timeout: {
-      request: 10000
+      request: proxyUrl ? 15000 : 10000
     },
     headers: {
       'referer': 'https://www.google.com.br/'
@@ -35,8 +56,8 @@ async function main() {
     }
   };
 
-  if (proxyUrl && proxyUrl.trim() !== '') {
-    requestOptions.proxyUrl = proxyUrl.trim();
+  if (proxyUrl) {
+    requestOptions.proxyUrl = proxyUrl;
   }
 
   try {
