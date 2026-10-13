@@ -14,6 +14,23 @@ defmodule Kfofo.Scrapers do
   ]
 
   @doc """
+  Fetches properties for a single portal (`:olx` or `:quintoandar`).
+  """
+  def fetch_portal(portal, opts \\ %{})
+
+  def fetch_portal(:olx, opts) do
+    Olx.fetch_properties(opts)
+  end
+
+  def fetch_portal(:quintoandar, opts) do
+    QuintoAndar.fetch_properties(opts)
+  end
+
+  def fetch_portal(portal, _opts) do
+    {:error, {:unknown_portal, portal}}
+  end
+
+  @doc """
   Fetches properties from all configured marketplace scrapers in parallel.
 
   ## Options
@@ -60,7 +77,7 @@ defmodule Kfofo.Scrapers do
         end)
       end)
 
-    yielded_results = Task.yield_many(tasks, 12_000)
+    yielded_results = Task.yield_many(tasks, 25_000)
 
     results =
       Enum.map(yielded_results, fn {task, res} ->
@@ -134,7 +151,10 @@ defmodule Kfofo.Scrapers do
     end)
   end
 
-  defp interleave_or_dedup(property_lists) when is_list(property_lists) do
+  @doc """
+  Interleaves multiple lists of properties and deduplicates by external_id.
+  """
+  def interleave_or_dedup(property_lists) when is_list(property_lists) do
     property_lists
     |> interleave_lists()
     |> Enum.uniq_by(& &1.external_id)

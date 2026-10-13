@@ -799,24 +799,72 @@
                 <div>{@error_message}</div>
               </div>
             <% end %>
-            
-<!-- Loading Skeleton -->
+
             <%= if @loading do %>
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5 animate-pulse">
-                <%= for _ <- 1..8 do %>
-                  <div class="rounded-3xl border border-zinc-800 bg-zinc-900/60 overflow-hidden h-[380px] flex flex-col justify-between">
-                    <div class="h-48 bg-zinc-800/60"></div>
-                    <div class="p-4 space-y-3">
-                      <div class="h-4 bg-zinc-800 rounded w-3/4"></div>
-                      <div class="h-3 bg-zinc-800 rounded w-1/2"></div>
-                      <div class="h-9 bg-zinc-800/40 rounded-xl mt-4"></div>
+              <!-- Animated Loading State with Generic Message & Skeleton Grid -->
+              <div class="space-y-8 animate-fade-in">
+                <!-- Sleek Animated Loading Banner -->
+                <div class="relative overflow-hidden rounded-3xl border border-zinc-800 bg-gradient-to-b from-zinc-900/95 via-zinc-900/70 to-zinc-950/95 p-8 sm:p-10 text-center shadow-2xl backdrop-blur">
+                  <!-- Ambient Glow Background -->
+                  <div class="pointer-events-none absolute -top-16 left-1/2 -translate-x-1/2 w-96 h-48 bg-gradient-to-b from-orange-500/15 via-amber-500/10 to-transparent blur-3xl rounded-full">
+                  </div>
+
+                  <div class="relative z-10 max-w-md mx-auto">
+                    <!-- Modern Pulse / Spin Indicator -->
+                    <div class="relative w-16 h-16 mx-auto mb-5 flex items-center justify-center">
+                      <!-- Outer spinning gradient ring -->
+                      <div class="absolute inset-0 rounded-full border-2 border-transparent border-t-orange-500 border-r-amber-500 animate-spin">
+                      </div>
+                      <!-- Soft pulsing glow ring -->
+                      <div class="absolute inset-1 rounded-full bg-orange-500/15 animate-ping">
+                      </div>
+                      <!-- Center icon -->
+                      <div class="relative flex items-center justify-center w-11 h-11 rounded-full bg-gradient-to-tr from-zinc-900 to-zinc-800 border border-zinc-700/80 shadow-inner">
+                        <span class="text-xl">🏡</span>
+                      </div>
+                    </div>
+                    
+<!-- Heading -->
+                    <h3 class="text-lg sm:text-xl font-bold text-white tracking-tight">
+                      Buscando imóveis nos parceiros...
+                    </h3>
+                    
+<!-- Generic Message -->
+                    <p class="mt-2 text-xs sm:text-sm text-zinc-400 font-normal leading-relaxed">
+                      Consultando e sincronizando anúncios em tempo real. Isso pode levar alguns instantes enquanto agregamos fotos e valores atualizados.
+                    </p>
+                    
+<!-- Shimmer / Progress Line -->
+                    <div class="mt-5 w-48 sm:w-64 mx-auto bg-zinc-800/80 rounded-full h-1.5 overflow-hidden">
+                      <div class="h-1.5 rounded-full bg-gradient-to-r from-orange-500 via-amber-400 to-orange-500 animate-[pulse_1.2s_ease-in-out_infinite] w-full">
+                      </div>
+                    </div>
+                    
+<!-- Micro status badge -->
+                    <div class="mt-4 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-800/60 border border-zinc-700/50 text-[11px] text-zinc-400 font-medium">
+                      <span class="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse"></span>
+                      <span>Agregando anúncios e detalhes</span>
                     </div>
                   </div>
-                <% end %>
+                </div>
+                
+<!-- Skeleton Cards Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5 animate-pulse">
+                  <%= for _ <- 1..8 do %>
+                    <div class="rounded-3xl border border-zinc-800 bg-zinc-900/60 overflow-hidden h-[380px] flex flex-col justify-between">
+                      <div class="h-48 bg-zinc-800/60"></div>
+                      <div class="p-4 space-y-3">
+                        <div class="h-4 bg-zinc-800 rounded w-3/4"></div>
+                        <div class="h-3 bg-zinc-800 rounded w-1/2"></div>
+                        <div class="h-9 bg-zinc-800/40 rounded-xl mt-4"></div>
+                      </div>
+                    </div>
+                  <% end %>
+                </div>
               </div>
             <% else %>
-              <!-- Empty State -->
               <%= if @properties == [] && is_nil(@error_message) do %>
+                <!-- Empty State -->
                 <div class="text-center py-20 rounded-3xl border border-dashed border-zinc-800 bg-zinc-900/30 p-8">
                   <div class="text-4xl mb-3">🏡</div>
                   <h3 class="text-base font-bold text-white mb-1">

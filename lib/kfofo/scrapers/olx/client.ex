@@ -60,11 +60,17 @@ defmodule Kfofo.Scrapers.Olx.Client do
   defp default_fetch(url, headers) do
     script_path = Path.join(:code.priv_dir(:kfofo), "scrapers/fetch_olx.mjs")
 
-    case System.cmd("node", [script_path, url], stderr_to_stdout: false) do
+    case System.cmd("node", [script_path, url], stderr_to_stdout: true) do
       {body, 0} when is_binary(body) and byte_size(body) > 0 ->
         {:ok, body}
 
-      _ ->
+      {error_output, exit_code} ->
+        require Logger
+
+        Logger.warning(
+          "OLX Node fetcher failed (code #{exit_code}): #{String.trim(error_output)}"
+        )
+
         case Req.get(url, headers: headers, receive_timeout: 8_000, retry: false) do
           {:ok, %Req.Response{status: 200, body: body}} ->
             {:ok, body}

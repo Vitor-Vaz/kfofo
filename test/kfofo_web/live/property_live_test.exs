@@ -176,4 +176,15 @@ defmodule KfofoWeb.PropertyLiveTest do
       "/properties?location_query=Vila+Mariana%2C+SP&source=quintoandar&type=venda"
     )
   end
+
+  test "renders animated loading state with generic message and skeleton while searching", %{
+    conn: conn
+  } do
+    {:ok, view, _html} = live(conn, "/properties?location_query=Pinheiros")
+
+    rendered = render(view)
+    assert rendered =~ "Buscando imóveis nos parceiros..."
+    assert rendered =~ "Consultando e sincronizando anúncios em tempo real"
+    assert rendered =~ "Agregando anúncios e detalhes"
+  end
 end

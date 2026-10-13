@@ -395,7 +395,7 @@ defmodule KfofoWeb.PropertyLive.Index do
       |> assign(:total, 0)
       |> assign(
         :error_message,
-        "Ocorreu uma falha inesperada ao conectar com os portais de imóveis."
+        "Ocorreu uma falha inesperada ao conectar com os portais parceiros."
       )
 
     {:noreply, socket}
@@ -404,7 +404,13 @@ defmodule KfofoWeb.PropertyLive.Index do
   defp start_async_fetch(socket, params) do
     search_opts = parse_search_opts(params)
 
-    start_async(socket, :fetch_properties, fn ->
+    socket
+    |> assign(:loading, true)
+    |> assign(:raw_properties, [])
+    |> assign(:properties, [])
+    |> assign(:total, 0)
+    |> assign(:error_message, nil)
+    |> start_async(:fetch_properties, fn ->
       Scrapers.fetch_all_properties(search_opts)
     end)
   end

@@ -40,7 +40,7 @@ async function main() {
   const requestOptions = {
     url: targetUrl,
     timeout: {
-      request: proxyUrl ? 15000 : 10000
+      request: proxyUrl ? 25000 : 10000
     },
     headers: {
       'referer': 'https://www.google.com.br/'
