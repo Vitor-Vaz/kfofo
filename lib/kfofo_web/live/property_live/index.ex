@@ -50,10 +50,6 @@ defmodule KfofoWeb.PropertyLive.Index do
       |> assign(:total, 0)
       |> assign(:searched, false)
       |> assign(:error_message, nil)
-      |> assign(:portal_status, %{olx: :idle, quintoandar: :idle})
-      |> assign(:portal_counts, %{olx: 0, quintoandar: 0})
-      |> assign(:portal_errors, %{olx: nil, quintoandar: nil})
-      |> assign(:portal_results, %{olx: [], quintoandar: []})
 
     {:ok, socket}
   end
@@ -76,10 +72,6 @@ defmodule KfofoWeb.PropertyLive.Index do
     |> assign(:searched, false)
     |> assign(:error_message, nil)
     |> assign(:show_predictions, false)
-    |> assign(:portal_status, %{olx: :idle, quintoandar: :idle})
-    |> assign(:portal_counts, %{olx: 0, quintoandar: 0})
-    |> assign(:portal_errors, %{olx: nil, quintoandar: nil})
-    |> assign(:portal_results, %{olx: [], quintoandar: []})
     |> push_event("clear_saved_search", %{})
   end
 
@@ -368,83 +360,6 @@ defmodule KfofoWeb.PropertyLive.Index do
   end
 
   @impl true
-  def handle_async({:fetch_portal, portal}, {:ok, {:ok, result}}, socket) do
-    new_results = Map.put(socket.assigns.portal_results, portal, result.properties)
-    new_counts = Map.put(socket.assigns.portal_counts, portal, length(result.properties))
-    new_status = Map.put(socket.assigns.portal_status, portal, :done)
-    new_errors = Map.put(socket.assigns.portal_errors, portal, nil)
-
-    is_still_loading = Enum.any?(new_status, fn {_k, status} -> status == :loading end)
-
-    combined_raw =
-      [new_results.olx, new_results.quintoandar]
-      |> Scrapers.interleave_or_dedup()
-
-    sort_by = socket.assigns[:sort_by] || "recent"
-    sorted = sort_properties(combined_raw, sort_by)
-
-    socket =
-      socket
-      |> assign(:portal_status, new_status)
-      |> assign(:portal_counts, new_counts)
-      |> assign(:portal_errors, new_errors)
-      |> assign(:portal_results, new_results)
-      |> assign(:loading, is_still_loading)
-      |> assign(:raw_properties, combined_raw)
-      |> assign(:properties, sorted)
-      |> assign(:total, length(combined_raw))
-
-    {:noreply, socket}
-  end
-
-  @impl true
-  def handle_async({:fetch_portal, portal}, {:ok, {:error, reason}}, socket) do
-    error_text = format_portal_error(portal, reason)
-    new_status = Map.put(socket.assigns.portal_status, portal, :error)
-    new_errors = Map.put(socket.assigns.portal_errors, portal, error_text)
-
-    is_still_loading = Enum.any?(new_status, fn {_k, status} -> status == :loading end)
-
-    all_failed =
-      Enum.all?(new_status, fn {_k, status} -> status in [:error, :skipped] end) and
-        socket.assigns.properties == []
-
-    general_error =
-      case all_failed do
-        true -> "Não foi possível carregar os imóveis dos portais parceiros no momento."
-        false -> socket.assigns.error_message
-      end
-
-    socket =
-      socket
-      |> assign(:portal_status, new_status)
-      |> assign(:portal_errors, new_errors)
-      |> assign(:loading, is_still_loading)
-      |> assign(:error_message, general_error)
-
-    {:noreply, socket}
-  end
-
-  @impl true
-  def handle_async({:fetch_portal, portal}, {:exit, _reason}, socket) do
-    error_text =
-      "Falha inesperada ao comunicar com o portal #{source_portal_name(to_string(portal))}."
-
-    new_status = Map.put(socket.assigns.portal_status, portal, :error)
-    new_errors = Map.put(socket.assigns.portal_errors, portal, error_text)
-
-    is_still_loading = Enum.any?(new_status, fn {_k, status} -> status == :loading end)
-
-    socket =
-      socket
-      |> assign(:portal_status, new_status)
-      |> assign(:portal_errors, new_errors)
-      |> assign(:loading, is_still_loading)
-
-    {:noreply, socket}
-  end
-
-  @impl true
   def handle_async(:fetch_properties, {:ok, {:ok, result}}, socket) do
     sort_by = socket.assigns[:sort_by] || "recent"
     sorted_properties = sort_properties(result.properties, sort_by)
@@ -480,7 +395,7 @@ defmodule KfofoWeb.PropertyLive.Index do
       |> assign(:total, 0)
       |> assign(
         :error_message,
-        "Ocorreu uma falha inesperada ao conectar com os portais de imóveis."
+        "Ocorreu uma falha inesperada ao conectar com os portais parceiros."
       )
 
     {:noreply, socket}
@@ -488,58 +403,16 @@ defmodule KfofoWeb.PropertyLive.Index do
 
   defp start_async_fetch(socket, params) do
     search_opts = parse_search_opts(params)
-    source_opt = search_opts[:source]
-
-    initial_status = %{
-      olx: portal_initial_status(:olx, source_opt),
-      quintoandar: portal_initial_status(:quintoandar, source_opt)
-    }
 
     socket
     |> assign(:loading, true)
-    |> assign(:portal_status, initial_status)
-    |> assign(:portal_counts, %{olx: 0, quintoandar: 0})
-    |> assign(:portal_errors, %{olx: nil, quintoandar: nil})
-    |> assign(:portal_results, %{olx: [], quintoandar: []})
     |> assign(:raw_properties, [])
     |> assign(:properties, [])
     |> assign(:total, 0)
-    |> maybe_start_portal_fetch(:olx, search_opts, source_opt)
-    |> maybe_start_portal_fetch(:quintoandar, search_opts, source_opt)
-  end
-
-  defp portal_initial_status(portal, source_opt) do
-    case source_opt do
-      nil ->
-        :loading
-
-      "all" ->
-        :loading
-
-      "" ->
-        :loading
-
-      source when is_binary(source) ->
-        case to_string(portal) == source do
-          true -> :loading
-          false -> :skipped
-        end
-
-      _ ->
-        :loading
-    end
-  end
-
-  defp maybe_start_portal_fetch(socket, portal, search_opts, source_opt) do
-    case portal_initial_status(portal, source_opt) do
-      :loading ->
-        start_async(socket, {:fetch_portal, portal}, fn ->
-          Scrapers.fetch_portal(portal, search_opts)
-        end)
-
-      :skipped ->
-        socket
-    end
+    |> assign(:error_message, nil)
+    |> start_async(:fetch_properties, fn ->
+      Scrapers.fetch_all_properties(search_opts)
+    end)
   end
 
   defp parse_search_opts(params) do
@@ -669,30 +542,6 @@ defmodule KfofoWeb.PropertyLive.Index do
 
   defp format_error(_), do: "Ocorreu um erro ao buscar imóveis nos portais parceiros."
 
-  defp format_portal_error(portal, {:network_error, {:http_error, 403}}) do
-    "O portal #{source_portal_name(to_string(portal))} bloqueou a requisição temporariamente (HTTP 403)."
-  end
-
-  defp format_portal_error(portal, {:http_error, 403}) do
-    "O portal #{source_portal_name(to_string(portal))} bloqueou a requisição temporariamente (HTTP 403)."
-  end
-
-  defp format_portal_error(portal, :timeout) do
-    "Tempo limite de resposta excedido para #{source_portal_name(to_string(portal))}."
-  end
-
-  defp format_portal_error(portal, {:network_error, _}) do
-    "Falha de conexão com #{source_portal_name(to_string(portal))}."
-  end
-
-  defp format_portal_error(portal, :no_ads_found) do
-    "Nenhum anúncio retornado pela #{source_portal_name(to_string(portal))} para esta busca."
-  end
-
-  defp format_portal_error(portal, _reason) do
-    "Não foi possível obter anúncios de #{source_portal_name(to_string(portal))}."
-  end
-
   def format_price(nil), do: "Sob Consulta"
 
   def format_price(price) when is_number(price) do
@@ -795,262 +644,4 @@ defmodule KfofoWeb.PropertyLive.Index do
     end)
     |> Map.new()
   end
-
-  @doc """
-  Renders a loading/status card component for OLX.
-  """
-  attr :status, :atom, required: true
-  attr :count, :integer, default: 0
-  attr :error, :string, default: nil
-
-  def olx_loading_card(assigns) do
-    ~H"""
-    <div class={"relative overflow-hidden rounded-2xl border transition-all duration-300 p-4 #{olx_card_classes(@status)}"}>
-      <!-- Background Ambient Glow -->
-      <div class="pointer-events-none absolute -top-8 -right-8 w-24 h-24 rounded-full bg-orange-500/10 blur-2xl">
-      </div>
-
-      <div class="flex items-center justify-between gap-3 relative z-10">
-        <div class="flex items-center gap-3">
-          <!-- OLX Logo Badge -->
-          <div class="flex items-center justify-center h-9 px-3 rounded-xl bg-gradient-to-tr from-orange-600 via-orange-500 to-amber-500 text-white font-black text-xs tracking-wider shadow-md shadow-orange-600/30">
-            OLX
-          </div>
-          <div>
-            <div class="flex items-center gap-2">
-              <span class="text-sm font-bold text-white tracking-tight">OLX Imóveis</span>
-              <span class="text-[10px] text-zinc-400 font-medium">Parceiro</span>
-            </div>
-            <p class="text-[11px] text-zinc-400">
-              <%= case @status do %>
-                <% :loading -> %>
-                  Sincronizando anúncios em tempo real...
-                <% :done -> %>
-                  Busca finalizada com sucesso
-                <% :error -> %>
-                  Portal indisponível no momento
-                <% :skipped -> %>
-                  Busca desativada pelo filtro
-                <% _ -> %>
-                  Aguardando consulta
-              <% end %>
-            </p>
-          </div>
-        </div>
-        
-    <!-- Status Pill -->
-        <div>
-          <%= case @status do %>
-            <% :loading -> %>
-              <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-orange-500/15 border border-orange-500/40 text-orange-400 shadow-inner">
-                <span class="relative flex h-2 w-2">
-                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75">
-                  </span>
-                  <span class="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
-                </span>
-                <span>Buscando...</span>
-              </div>
-            <% :done -> %>
-              <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
-                <span class="text-xs">✓</span>
-                <span>{@count} {if @count == 1, do: "imóvel", else: "imóveis"}</span>
-              </div>
-            <% :error -> %>
-              <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-500/15 border border-amber-500/30 text-amber-400">
-                <span>⚠️</span>
-                <span>Indisponível</span>
-              </div>
-            <% :skipped -> %>
-              <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-zinc-800 text-zinc-400 border border-zinc-700/50">
-                <span>Filtro inativo</span>
-              </div>
-            <% _ -> %>
-              <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-zinc-800 text-zinc-400">
-                <span>Pronto</span>
-              </div>
-          <% end %>
-        </div>
-      </div>
-      
-    <!-- Animated Progress Bar / Status Detail -->
-      <div class="mt-3 relative z-10">
-        <%= case @status do %>
-          <% :loading -> %>
-            <div class="w-full bg-zinc-800/80 rounded-full h-1.5 overflow-hidden">
-              <div class="h-1.5 rounded-full bg-gradient-to-r from-orange-500 via-amber-400 to-orange-600 animate-[pulse_1.2s_ease-in-out_infinite] w-3/4">
-              </div>
-            </div>
-            <div class="mt-2 flex items-center justify-between text-[11px] text-zinc-400">
-              <span class="flex items-center gap-1.5">
-                <span class="animate-spin text-orange-400 inline-block text-xs">⟳</span>
-                Aguardando resposta do portal OLX...
-              </span>
-              <span class="text-orange-400/80 font-mono text-[10px]">Rotacionando</span>
-            </div>
-          <% :done -> %>
-            <div class="w-full bg-zinc-800/80 rounded-full h-1.5 overflow-hidden">
-              <div class="h-1.5 rounded-full bg-emerald-500 w-full transition-all duration-500"></div>
-            </div>
-            <div class="mt-2 flex items-center justify-between text-[11px] text-zinc-300">
-              <span class="text-zinc-400">Anúncios integrados ao feed</span>
-              <span class="text-emerald-400 font-semibold text-[11px]">100% concluído</span>
-            </div>
-          <% :error -> %>
-            <div class="rounded-xl bg-amber-950/30 border border-amber-800/40 p-2.5 text-xs text-amber-300 flex items-start gap-2">
-              <span class="text-sm">⚠️</span>
-              <span class="text-[11px] leading-snug">
-                {@error || "Não foi possível sincronizar os imóveis da OLX no momento."}
-              </span>
-            </div>
-          <% _ -> %>
-            <div class="text-[11px] text-zinc-500">Pronto para buscar</div>
-        <% end %>
-      </div>
-    </div>
-    """
-  end
-
-  @doc """
-  Renders a loading/status card component for QuintoAndar.
-  """
-  attr :status, :atom, required: true
-  attr :count, :integer, default: 0
-  attr :error, :string, default: nil
-
-  def quintoandar_loading_card(assigns) do
-    ~H"""
-    <div class={"relative overflow-hidden rounded-2xl border transition-all duration-300 p-4 #{quintoandar_card_classes(@status)}"}>
-      <!-- Background Ambient Glow -->
-      <div class="pointer-events-none absolute -top-8 -right-8 w-24 h-24 rounded-full bg-blue-500/10 blur-2xl">
-      </div>
-
-      <div class="flex items-center justify-between gap-3 relative z-10">
-        <div class="flex items-center gap-3">
-          <!-- QuintoAndar Logo Badge -->
-          <div class="flex items-center justify-center h-9 px-3 rounded-xl bg-gradient-to-tr from-blue-700 via-blue-600 to-indigo-500 text-white font-black text-xs tracking-wider shadow-md shadow-blue-600/30">
-            5A
-          </div>
-          <div>
-            <div class="flex items-center gap-2">
-              <span class="text-sm font-bold text-white tracking-tight">QuintoAndar</span>
-              <span class="text-[10px] text-zinc-400 font-medium">Parceiro</span>
-            </div>
-            <p class="text-[11px] text-zinc-400">
-              <%= case @status do %>
-                <% :loading -> %>
-                  Sincronizando anúncios em tempo real...
-                <% :done -> %>
-                  Busca finalizada com sucesso
-                <% :error -> %>
-                  Portal indisponível no momento
-                <% :skipped -> %>
-                  Busca desativada pelo filtro
-                <% _ -> %>
-                  Aguardando consulta
-              <% end %>
-            </p>
-          </div>
-        </div>
-        
-    <!-- Status Pill -->
-        <div>
-          <%= case @status do %>
-            <% :loading -> %>
-              <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-blue-500/15 border border-blue-500/40 text-blue-400 shadow-inner">
-                <span class="relative flex h-2 w-2">
-                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75">
-                  </span>
-                  <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-                </span>
-                <span>Buscando...</span>
-              </div>
-            <% :done -> %>
-              <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
-                <span class="text-xs">✓</span>
-                <span>{@count} {if @count == 1, do: "imóvel", else: "imóveis"}</span>
-              </div>
-            <% :error -> %>
-              <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-500/15 border border-amber-500/30 text-amber-400">
-                <span>⚠️</span>
-                <span>Indisponível</span>
-              </div>
-            <% :skipped -> %>
-              <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-zinc-800 text-zinc-400 border border-zinc-700/50">
-                <span>Filtro inativo</span>
-              </div>
-            <% _ -> %>
-              <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-zinc-800 text-zinc-400">
-                <span>Pronto</span>
-              </div>
-          <% end %>
-        </div>
-      </div>
-      
-    <!-- Animated Progress Bar / Status Detail -->
-      <div class="mt-3 relative z-10">
-        <%= case @status do %>
-          <% :loading -> %>
-            <div class="w-full bg-zinc-800/80 rounded-full h-1.5 overflow-hidden">
-              <div class="h-1.5 rounded-full bg-gradient-to-r from-blue-500 via-indigo-400 to-blue-600 animate-[pulse_1.2s_ease-in-out_infinite] w-3/4">
-              </div>
-            </div>
-            <div class="mt-2 flex items-center justify-between text-[11px] text-zinc-400">
-              <span class="flex items-center gap-1.5">
-                <span class="animate-spin text-blue-400 inline-block text-xs">⟳</span>
-                Aguardando resposta da API QuintoAndar...
-              </span>
-              <span class="text-blue-400/80 font-mono text-[10px]">Conectando</span>
-            </div>
-          <% :done -> %>
-            <div class="w-full bg-zinc-800/80 rounded-full h-1.5 overflow-hidden">
-              <div class="h-1.5 rounded-full bg-emerald-500 w-full transition-all duration-500"></div>
-            </div>
-            <div class="mt-2 flex items-center justify-between text-[11px] text-zinc-300">
-              <span class="text-zinc-400">Anúncios integrados ao feed</span>
-              <span class="text-emerald-400 font-semibold text-[11px]">100% concluído</span>
-            </div>
-          <% :error -> %>
-            <div class="rounded-xl bg-amber-950/30 border border-amber-800/40 p-2.5 text-xs text-amber-300 flex items-start gap-2">
-              <span class="text-sm">⚠️</span>
-              <span class="text-[11px] leading-snug">
-                {@error || "Não foi possível sincronizar os imóveis do QuintoAndar no momento."}
-              </span>
-            </div>
-          <% _ -> %>
-            <div class="text-[11px] text-zinc-500">Pronto para buscar</div>
-        <% end %>
-      </div>
-    </div>
-    """
-  end
-
-  defp olx_card_classes(:loading),
-    do: "bg-zinc-900/90 border-orange-500/40 shadow-lg shadow-orange-950/20"
-
-  defp olx_card_classes(:done),
-    do: "bg-zinc-900/80 border-zinc-800/90 shadow-md"
-
-  defp olx_card_classes(:error),
-    do: "bg-zinc-900/80 border-amber-500/30"
-
-  defp olx_card_classes(:skipped),
-    do: "bg-zinc-900/40 border-zinc-800/40 opacity-50"
-
-  defp olx_card_classes(_),
-    do: "bg-zinc-900/60 border-zinc-800"
-
-  defp quintoandar_card_classes(:loading),
-    do: "bg-zinc-900/90 border-blue-500/40 shadow-lg shadow-blue-950/20"
-
-  defp quintoandar_card_classes(:done),
-    do: "bg-zinc-900/80 border-zinc-800/90 shadow-md"
-
-  defp quintoandar_card_classes(:error),
-    do: "bg-zinc-900/80 border-amber-500/30"
-
-  defp quintoandar_card_classes(:skipped),
-    do: "bg-zinc-900/40 border-zinc-800/40 opacity-50"
-
-  defp quintoandar_card_classes(_),
-    do: "bg-zinc-900/60 border-zinc-800"
 end

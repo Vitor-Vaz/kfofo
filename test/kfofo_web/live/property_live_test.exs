@@ -177,30 +177,14 @@ defmodule KfofoWeb.PropertyLiveTest do
     )
   end
 
-  test "renders dedicated loading cards for OLX and QuintoAndar in properties results page", %{
+  test "renders animated loading state with generic message and skeleton while searching", %{
     conn: conn
   } do
     {:ok, view, _html} = live(conn, "/properties?location_query=Pinheiros")
 
     rendered = render(view)
-    assert rendered =~ "OLX Imóveis"
-    assert rendered =~ "QuintoAndar"
-    assert rendered =~ "Parceiro"
-  end
-
-  test "displays inactive filter badge on the unselected portal when source is filtered", %{
-    conn: conn
-  } do
-    {:ok, view_olx, _html} = live(conn, "/properties?location_query=Pinheiros&source=olx")
-    rendered_olx = render(view_olx)
-    assert rendered_olx =~ "OLX Imóveis"
-    assert rendered_olx =~ "Filtro inativo"
-
-    {:ok, view_quinto, _html} =
-      live(conn, "/properties?location_query=Pinheiros&source=quintoandar")
-
-    rendered_quinto = render(view_quinto)
-    assert rendered_quinto =~ "QuintoAndar"
-    assert rendered_quinto =~ "Filtro inativo"
+    assert rendered =~ "Buscando imóveis nos parceiros..."
+    assert rendered =~ "Consultando e sincronizando anúncios em tempo real"
+    assert rendered =~ "Agregando anúncios e detalhes"
   end
 end
