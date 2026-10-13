@@ -176,4 +176,31 @@ defmodule KfofoWeb.PropertyLiveTest do
       "/properties?location_query=Vila+Mariana%2C+SP&source=quintoandar&type=venda"
     )
   end
+
+  test "renders dedicated loading cards for OLX and QuintoAndar in properties results page", %{
+    conn: conn
+  } do
+    {:ok, view, _html} = live(conn, "/properties?location_query=Pinheiros")
+
+    rendered = render(view)
+    assert rendered =~ "OLX Imóveis"
+    assert rendered =~ "QuintoAndar"
+    assert rendered =~ "Parceiro"
+  end
+
+  test "displays inactive filter badge on the unselected portal when source is filtered", %{
+    conn: conn
+  } do
+    {:ok, view_olx, _html} = live(conn, "/properties?location_query=Pinheiros&source=olx")
+    rendered_olx = render(view_olx)
+    assert rendered_olx =~ "OLX Imóveis"
+    assert rendered_olx =~ "Filtro inativo"
+
+    {:ok, view_quinto, _html} =
+      live(conn, "/properties?location_query=Pinheiros&source=quintoandar")
+
+    rendered_quinto = render(view_quinto)
+    assert rendered_quinto =~ "QuintoAndar"
+    assert rendered_quinto =~ "Filtro inativo"
+  end
 end
