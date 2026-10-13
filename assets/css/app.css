@@ -18,3 +18,32 @@
 .animate-fade-in {
   animation: fadeIn 0.35s ease-out forwards;
 }
+
+/* Custom sleek horizontal scrollbar for photo gallery thumbnails */
+.gallery-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #52525b rgba(24, 24, 27, 0.7);
+  -webkit-overflow-scrolling: touch;
+}
+
+.gallery-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+
+.gallery-scroll::-webkit-scrollbar-track {
+  background: rgba(24, 24, 27, 0.7);
+  border-radius: 9999px;
+  margin: 0 4px;
+}
+
+.gallery-scroll::-webkit-scrollbar-thumb {
+  background: #52525b;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.2s ease;
+}
+
+.gallery-scroll::-webkit-scrollbar-thumb:hover {
+  background: #f97316;
+}
+

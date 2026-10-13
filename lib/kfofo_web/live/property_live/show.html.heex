@@ -1,0 +1,596 @@
+<div class="min-h-screen bg-zinc-950 text-zinc-100 pb-16">
+  <!-- Top Navigation Bar -->
+  <header class="sticky top-0 z-40 bg-zinc-950/85 backdrop-blur-md border-b border-zinc-800/80 px-4 sm:px-6 lg:px-8 py-3.5">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+      <.link
+        navigate={return_path(@search_params)}
+        class="inline-flex items-center gap-2 text-sm font-semibold text-zinc-300 hover:text-white transition group py-1 px-2.5 -ml-2.5 rounded-lg hover:bg-zinc-900/60"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-4 w-4 transition group-hover:-translate-x-1"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2.5"
+            d="M10 19l-7-7m0 0l7-7m-7 7h18"
+          />
+        </svg>
+        <span>Voltar para a busca</span>
+      </.link>
+
+      <%= case @property do %>
+        <% nil -> %>
+          <div></div>
+        <% prop -> %>
+          <div class="flex items-center gap-2.5">
+            <span class={"px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm #{source_badge_class(prop.source)}"}>
+              {source_portal_name(prop.source)}
+            </span>
+            <span class="hidden sm:inline-block text-xs text-zinc-500 font-mono">
+              ID: {prop.external_id}
+            </span>
+          </div>
+      <% end %>
+    </div>
+  </header>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+    <%= case @property do %>
+      <% nil -> %>
+        <!-- Not Found State -->
+        <div class="max-w-xl mx-auto my-16 text-center bg-zinc-900/80 border border-zinc-800 rounded-3xl p-8 sm:p-12 shadow-2xl backdrop-blur-sm">
+          <div class="w-16 h-16 mx-auto mb-6 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-3xl">
+            🏠
+          </div>
+          <h1 class="text-2xl font-bold text-white mb-3">Imóvel não encontrado</h1>
+          <p class="text-zinc-400 text-sm leading-relaxed mb-8">
+            Este anúncio não está mais disponível no cache da busca ou o link informado expirou.
+            Faça uma nova pesquisa para visualizar os imóveis disponíveis em tempo real.
+          </p>
+          <.link
+            navigate={~p"/properties"}
+            class="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-semibold text-sm transition shadow-lg shadow-orange-600/30"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            <span>Buscar imóveis</span>
+          </.link>
+        </div>
+      <% prop -> %>
+        <!-- Property Details View -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <!-- Left Column: Gallery & Details -->
+          <div class="lg:col-span-8 space-y-8">
+            <!-- Hero Photo Gallery -->
+            <div class="space-y-3">
+              <!-- Main Image Box -->
+              <div class="relative w-full h-[320px] sm:h-[440px] md:h-[500px] bg-zinc-950 rounded-3xl overflow-hidden border border-zinc-800 shadow-2xl group select-none">
+                <img
+                  src={active_image(@images, @active_image_index)}
+                  alt={prop.title}
+                  referrerpolicy="no-referrer"
+                  class="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.01]"
+                  onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1200&auto=format&fit=crop&q=80';"
+                />
+                
+<!-- Dark Vignette Overlay -->
+                <div class="absolute inset-0 bg-gradient-to-t from-zinc-950/60 via-transparent to-black/20 pointer-events-none">
+                </div>
+                
+<!-- Navigation Controls -->
+                <%= case length(@images) > 1 do %>
+                  <% true -> %>
+                    <button
+                      type="button"
+                      phx-click="prev_image"
+                      aria-label="Foto anterior"
+                      class="absolute left-3.5 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-zinc-950/70 hover:bg-zinc-900 text-white flex items-center justify-center backdrop-blur-md shadow-xl border border-white/10 hover:scale-110 active:scale-95 transition"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2.5"
+                          d="M15 19l-7-7 7-7"
+                        />
+                      </svg>
+                    </button>
+
+                    <button
+                      type="button"
+                      phx-click="next_image"
+                      aria-label="Próxima foto"
+                      class="absolute right-3.5 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-zinc-950/70 hover:bg-zinc-900 text-white flex items-center justify-center backdrop-blur-md shadow-xl border border-white/10 hover:scale-110 active:scale-95 transition"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2.5"
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    </button>
+                  <% false -> %>
+                <% end %>
+                
+<!-- Bottom Badges (Counter & Fullscreen) -->
+                <div class="absolute bottom-4 inset-x-4 flex items-center justify-between z-20 pointer-events-none">
+                  <div class="bg-zinc-950/80 backdrop-blur-md text-white/95 text-xs font-semibold px-3 py-1.5 rounded-full border border-white/10 shadow-lg">
+                    📷 Foto {@active_image_index + 1} de {length(@images)}
+                  </div>
+
+                  <button
+                    type="button"
+                    phx-click="open_fullscreen"
+                    aria-label="Ver em tela cheia"
+                    class="pointer-events-auto inline-flex items-center gap-1.5 bg-zinc-950/80 hover:bg-zinc-900 backdrop-blur-md text-white/95 text-xs font-semibold px-3 py-1.5 rounded-full border border-white/10 shadow-lg hover:scale-105 active:scale-95 transition"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="h-3.5 w-3.5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
+                      />
+                    </svg>
+                    <span>Expandir</span>
+                  </button>
+                </div>
+              </div>
+              
+<!-- Thumbnails Carousel -->
+              <%= case length(@images) > 1 do %>
+                <% true -> %>
+                  <div class="flex items-center gap-2.5 overflow-x-auto pb-3 pt-1 px-1 gallery-scroll scroll-smooth">
+                    <%= for {img_url, idx} <- Enum.with_index(@images) do %>
+                      <button
+                        type="button"
+                        phx-click="select_image"
+                        phx-value-index={idx}
+                        class={"relative flex-shrink-0 w-20 h-16 sm:w-24 sm:h-20 rounded-xl overflow-hidden border-2 transition-all duration-200 #{case idx == @active_image_index do
+                          true -> "border-orange-500 scale-105 shadow-md shadow-orange-500/20 ring-2 ring-orange-500/40"
+                          false -> "border-zinc-800 opacity-60 hover:opacity-100 hover:border-zinc-600"
+                        end}"}
+                      >
+                        <img
+                          src={img_url}
+                          alt={"Miniatura #{idx + 1}"}
+                          referrerpolicy="no-referrer"
+                          class="w-full h-full object-cover"
+                          loading="lazy"
+                          onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=200&auto=format&fit=crop&q=80';"
+                        />
+                      </button>
+                    <% end %>
+                  </div>
+                <% false -> %>
+              <% end %>
+            </div>
+            
+<!-- Title & Basic Info Header -->
+            <div class="bg-zinc-900/60 border border-zinc-800/80 rounded-3xl p-6 sm:p-8 backdrop-blur-sm space-y-4 shadow-xl">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class={"px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider #{source_badge_class(prop.source)}"}>
+                  {source_portal_name(prop.source)}
+                </span>
+                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-zinc-800 text-zinc-300 border border-zinc-700/60">
+                  {property_type_label(
+                    prop[:property_type] || get_in(prop, [:details, :property_type])
+                  )}
+                </span>
+                <%= case prop[:published_at] do %>
+                  <% nil -> %>
+                  <% "" -> %>
+                  <% date -> %>
+                    <span class="text-xs text-zinc-500 ml-auto">
+                      Publicado em {date}
+                    </span>
+                <% end %>
+              </div>
+
+              <h1 class="text-2xl sm:text-3xl font-extrabold text-white leading-tight">
+                {prop.title}
+              </h1>
+
+              <div class="flex items-center gap-2 text-zinc-400 text-sm">
+                <span class="text-orange-400 text-base">📍</span>
+                <span class="font-medium text-zinc-200">
+                  {format_location_summary(prop[:location])}
+                </span>
+                <%= case Map.get(prop.location || %{}, :address) do %>
+                  <% addr when is_binary(addr) and addr != "" -> %>
+                    <span class="text-zinc-500">·</span>
+                    <span class="text-zinc-400 truncate">{addr}</span>
+                  <% _ -> %>
+                <% end %>
+              </div>
+            </div>
+            
+<!-- Specs Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+              <!-- Bedrooms -->
+              <div class="bg-zinc-900/70 border border-zinc-800/90 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-md hover:border-zinc-700 transition">
+                <span class="text-2xl mb-1.5">🛏️</span>
+                <span class="text-xs text-zinc-400 font-medium">Quartos</span>
+                <span class="text-lg font-bold text-white mt-0.5">
+                  {prop.details[:bedrooms] || prop.details[:rooms] || "Não inf."}
+                </span>
+              </div>
+              
+<!-- Bathrooms -->
+              <div class="bg-zinc-900/70 border border-zinc-800/90 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-md hover:border-zinc-700 transition">
+                <span class="text-2xl mb-1.5">🚿</span>
+                <span class="text-xs text-zinc-400 font-medium">Banheiros</span>
+                <span class="text-lg font-bold text-white mt-0.5">
+                  {prop.details[:bathrooms] || "Não inf."}
+                </span>
+              </div>
+              
+<!-- Garages -->
+              <div class="bg-zinc-900/70 border border-zinc-800/90 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-md hover:border-zinc-700 transition">
+                <span class="text-2xl mb-1.5">🚗</span>
+                <span class="text-xs text-zinc-400 font-medium">Vagas de Garagem</span>
+                <span class="text-lg font-bold text-white mt-0.5">
+                  {prop.details[:garage_spaces] || "Não inf."}
+                </span>
+              </div>
+              
+<!-- Area -->
+              <div class="bg-zinc-900/70 border border-zinc-800/90 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-md hover:border-zinc-700 transition">
+                <span class="text-2xl mb-1.5">📐</span>
+                <span class="text-xs text-zinc-400 font-medium">Área Útil</span>
+                <span class="text-lg font-bold text-white mt-0.5">
+                  {case prop.details[:area_sqm] || prop.details[:area_m2] do
+                    nil -> "Não inf."
+                    area -> "#{area} m²"
+                  end}
+                </span>
+              </div>
+            </div>
+            
+<!-- Description Section -->
+            <div class="bg-zinc-900/60 border border-zinc-800/80 rounded-3xl p-6 sm:p-8 backdrop-blur-sm shadow-xl space-y-4">
+              <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                <span>📝</span>
+                <span>Sobre este imóvel</span>
+              </h2>
+
+              <div class="text-zinc-300 text-sm leading-relaxed whitespace-pre-line break-words border-t border-zinc-800/80 pt-4">
+                <%= case prop.description do %>
+                  <% desc when is_binary(desc) and desc != "" -> %>
+                    {desc}
+                  <% _ -> %>
+                    <p class="text-zinc-400 italic">
+                      A descrição completa e detalhada deste imóvel pode ser conferida diretamente na página oficial do anúncio no portal original.
+                    </p>
+                <% end %>
+              </div>
+            </div>
+            
+<!-- Location Details Section -->
+            <div class="bg-zinc-900/60 border border-zinc-800/80 rounded-3xl p-6 sm:p-8 backdrop-blur-sm shadow-xl space-y-4">
+              <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                <span>📍</span>
+                <span>Localização</span>
+              </h2>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-zinc-800/80 pt-4 text-sm">
+                <div class="space-y-1">
+                  <span class="text-xs text-zinc-500 font-medium uppercase tracking-wider">
+                    Bairro
+                  </span>
+                  <p class="font-semibold text-white">
+                    {prop.location[:neighborhood] || "Não informado"}
+                  </p>
+                </div>
+
+                <div class="space-y-1">
+                  <span class="text-xs text-zinc-500 font-medium uppercase tracking-wider">
+                    Cidade / Estado
+                  </span>
+                  <p class="font-semibold text-white">
+                    {case {prop.location[:city], prop.location[:state]} do
+                      {nil, nil} -> "Não informado"
+                      {c, nil} -> c
+                      {c, s} -> "#{c} - #{s}"
+                    end}
+                  </p>
+                </div>
+
+                <%= case prop.location[:address] do %>
+                  <% addr when is_binary(addr) and addr != "" -> %>
+                    <div class="space-y-1 sm:col-span-2">
+                      <span class="text-xs text-zinc-500 font-medium uppercase tracking-wider">
+                        Endereço
+                      </span>
+                      <p class="font-semibold text-white">
+                        {addr}
+                      </p>
+                    </div>
+                  <% _ -> %>
+                <% end %>
+              </div>
+            </div>
+          </div>
+          
+<!-- Right Column: Sticky Pricing & Action Card -->
+          <div class="lg:col-span-4 lg:sticky lg:top-24 space-y-4">
+            <div class="bg-zinc-900/90 border border-zinc-800/90 rounded-3xl p-6 sm:p-7 shadow-2xl backdrop-blur-md space-y-6">
+              <!-- Price Header -->
+              <div class="border-b border-zinc-800/80 pb-5">
+                <span class="text-xs font-semibold text-zinc-400 uppercase tracking-wider block mb-1">
+                  Valor do Imóvel
+                </span>
+                <div class="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                  {format_price(prop.price)}
+                </div>
+                <span class="text-xs text-zinc-500 mt-1 block">
+                  Valores e taxas sujeitos a confirmação pelo anunciante.
+                </span>
+              </div>
+              
+<!-- Financial Specifications -->
+              <div class="space-y-3 text-sm">
+                <div class="flex items-center justify-between text-zinc-300">
+                  <span class="text-zinc-400">Condomínio</span>
+                  <span class="font-semibold text-white">
+                    {case Map.get(prop.details || %{}, :condo_fee) do
+                      fee when is_number(fee) -> format_price(fee)
+                      _ -> "Sob consulta"
+                    end}
+                  </span>
+                </div>
+
+                <div class="flex items-center justify-between text-zinc-300">
+                  <span class="text-zinc-400">IPTU</span>
+                  <span class="font-semibold text-white">
+                    {case Map.get(prop.details || %{}, :iptu) do
+                      iptu when is_number(iptu) -> format_price(iptu)
+                      _ -> "Sob consulta"
+                    end}
+                  </span>
+                </div>
+
+                <div class="flex items-center justify-between text-zinc-300">
+                  <span class="text-zinc-400">Portal de Origem</span>
+                  <span class="font-semibold text-white">
+                    {source_portal_name(prop.source)}
+                  </span>
+                </div>
+              </div>
+              
+<!-- Primary Action CTA -->
+              <div class="space-y-3 pt-2">
+                <%= case prop.url do %>
+                  <% url when is_binary(url) and url != "" -> %>
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class={"w-full flex items-center justify-center gap-2 py-3.5 px-5 rounded-2xl font-bold text-sm transition-all duration-200 shadow-xl hover:scale-[1.02] active:scale-95 #{source_button_class(prop.source)}"}
+                    >
+                      <span>Ver anúncio oficial no {source_portal_name(prop.source)}</span>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2.5"
+                          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                        />
+                      </svg>
+                    </a>
+                  <% _ -> %>
+                    <div class="w-full text-center py-3 text-xs text-zinc-500">
+                      Link direto indisponível
+                    </div>
+                <% end %>
+                
+<!-- Share Link Button -->
+                <button
+                  type="button"
+                  phx-click="copy_link"
+                  class="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-zinc-800/80 hover:bg-zinc-800 text-zinc-200 hover:text-white border border-zinc-700/60 text-xs font-semibold transition active:scale-95"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-4 w-4 text-zinc-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                    />
+                  </svg>
+                  <span>
+                    {case @copied do
+                      true -> "✓ Link copiado para a área de transferência!"
+                      false -> "Compartilhar este anúncio"
+                    end}
+                  </span>
+                </button>
+              </div>
+              
+<!-- Safe Guarantee Note -->
+              <div class="text-[11px] text-zinc-500 leading-normal border-t border-zinc-800/80 pt-4 flex items-start gap-2">
+                <span class="text-zinc-400 text-xs mt-0.5">ℹ️</span>
+                <span>
+                  O kfofo é um agregador inteligente. As fotos, preços e dados técnicos são importados automaticamente dos portais parceiros.
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+    <% end %>
+  </div>
+  
+<!-- Fullscreen Photo Modal -->
+  <%= case @fullscreen and @property != nil do %>
+    <% true -> %>
+      <div
+        class="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex flex-col justify-between p-4 sm:p-6"
+        phx-window-keydown="close_fullscreen"
+        phx-key="Escape"
+      >
+        <!-- Modal Top Bar -->
+        <div class="flex items-center justify-between text-white z-10">
+          <div class="text-sm font-semibold text-zinc-300">
+            Foto {@active_image_index + 1} de {length(@images)}
+          </div>
+
+          <button
+            type="button"
+            phx-click="close_fullscreen"
+            aria-label="Fechar tela cheia"
+            class="w-10 h-10 rounded-full bg-zinc-900/80 hover:bg-zinc-800 text-white flex items-center justify-center border border-white/10 hover:scale-110 active:scale-95 transition"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2.5"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+        
+<!-- Centered Main Image with Prev/Next Controls -->
+        <div class="relative flex-1 flex items-center justify-center my-4 overflow-hidden select-none">
+          <%= case length(@images) > 1 do %>
+            <% true -> %>
+              <button
+                type="button"
+                phx-click="prev_image"
+                aria-label="Foto anterior"
+                class="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-zinc-900/80 hover:bg-zinc-800 text-white flex items-center justify-center border border-white/10 hover:scale-110 active:scale-95 transition"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2.5"
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </button>
+
+              <button
+                type="button"
+                phx-click="next_image"
+                aria-label="Próxima foto"
+                class="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-zinc-900/80 hover:bg-zinc-800 text-white flex items-center justify-center border border-white/10 hover:scale-110 active:scale-95 transition"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2.5"
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+            <% false -> %>
+          <% end %>
+
+          <img
+            src={active_image(@images, @active_image_index)}
+            alt={@property.title}
+            referrerpolicy="no-referrer"
+            class="max-w-full max-h-full object-contain rounded-2xl shadow-2xl"
+          />
+        </div>
+        
+<!-- Bottom Thumbnails in Modal -->
+        <%= case length(@images) > 1 do %>
+          <% true -> %>
+            <div class="flex items-center gap-2 overflow-x-auto py-2.5 px-2 z-10 max-w-4xl mx-auto gallery-scroll scroll-smooth">
+              <%= for {img_url, idx} <- Enum.with_index(@images) do %>
+                <button
+                  type="button"
+                  phx-click="select_image"
+                  phx-value-index={idx}
+                  class={"relative flex-shrink-0 w-14 h-12 sm:w-16 sm:h-14 rounded-lg overflow-hidden border-2 transition #{case idx == @active_image_index do
+                    true -> "border-orange-500 scale-105 ring-2 ring-orange-500/50"
+                    false -> "border-zinc-800 opacity-50 hover:opacity-100"
+                  end}"}
+                >
+                  <img
+                    src={img_url}
+                    alt={"Miniatura #{idx + 1}"}
+                    referrerpolicy="no-referrer"
+                    class="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                </button>
+              <% end %>
+            </div>
+          <% false -> %>
+        <% end %>
+      </div>
+    <% false -> %>
+  <% end %>
+</div>

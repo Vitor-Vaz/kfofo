@@ -51,8 +51,8 @@ O **kfofo** é um agregador inteligente de anúncios de imóveis (casas e aparta
     - Interface focada em uma caixa de busca ampla e imersiva no centro da tela com imagem de fundo temática de lares/casas.
   - **Página de Resultados de Busca**:
     - Após submeter os filtros, transição para tela com layout em duas seções: barra lateral dedicada para filtros de pesquisa e área principal expandida com os cards de imóveis.
-  - **Botão de Detalhes & Página Interna do Imóvel (`/properties/:id`)**:
-    - Cada card terá botão dedicado de "Detalhes" abrindo a ficha completa do imóvel (galeria em alta resolução, ficha técnica com condomínio/IPTU, descrição completa e link de origem).
+  - 🟢 **Botão de Detalhes & Página Interna do Imóvel (`/properties/:id`)**:
+    - Cada card conta com botão dedicado "Ver Detalhes" abrindo a ficha completa do imóvel (galeria em alta resolução com navegação e modal tela cheia, ficha financeira com condomínio/IPTU, descrição completa, mapa de localização e link de origem).
 - **Expansão de Marketplaces (Novos Scrapers)**:
   - 🟢 **QuintoAndar** (Parser Next.js SSR + extração de galeria e normalização multi-portal).
   - 🟡 **Zap Imóveis** (Fase 3).
@@ -61,8 +61,10 @@ O **kfofo** é um agregador inteligente de anúncios de imóveis (casas e aparta
   - Mapear e normalizar a hierarquia de mesorregiões e municípios da OLX para estados como RJ e SP (ex: Baixada/Metropolitana `/rio-de-janeiro-e-regiao/nova-iguacu`, Sul Fluminense `/serra-angra-dos-reis-e-regiao/resende`, Região dos Lagos, etc.) ou aplicar query param de busca direta por cidade (`q=...`), evitando que a OLX receba rotas sem a mesorregião e redirecione para anúncios genéricos da capital.
 - **Filtros Avançados & Ordenação**:
   - Ordenação por preço (menor/maior), mais recentes e filtros adicionais de vagas e banheiros.
-- **Destaque de Visualizações ("Nunca Visualizados" vs "Já Visualizados")**:
-  - Identificação visual para anúncios já abertos pelo usuário e filtro para exibir apenas novidades.
+- **Sistema de Cache Inteligente de Listagens (Search Results Cache)**:
+  - Implementar camada de cache com TTL configurável (ex: 15 a 30 minutos) indexada por hash dos parâmetros normalizados de pesquisa (`state`, `city`, `neighborhood`, `type`, `property_type`, faixas de preço, quartos, vagas e fonte).
+  - Reduzir expressivamente o tempo de carregamento de buscas repetidas para milissegundos ($O(1)$) e economizar créditos/requisições no ScraperAPI e proxies residenciais.
+  - Indicador visual na interface informando o frescor dos dados ("Atualizado há X minutos") acompanhado de botão de ação para forçar nova sincronização em tempo real ("Buscar novamente / Atualizar").
 - **Persistência de Buscas Salvas no Banco (Ecto / PostgreSQL)**:
   - Schemas para armazenamento de histórico e buscas favoritas.
 
@@ -102,7 +104,8 @@ O **kfofo** é um agregador inteligente de anúncios de imóveis (casas e aparta
 | **Filtro por Fonte/Portal** | Filtro exclusivo por marketplace (Todos, Apenas OLX, Apenas QuintoAndar) | 🟡 Médio Prazo | 🟢 **Concluído** |
 | **Animação Unificada de Loading** | Tela animada moderna com mensagem genérica e skeleton grid durante a busca paralela | ⚡ Imediato | 🟢 **Concluído** |
 | **Proxy Residencial ScraperAPI** | Suporte a proxy residencial via SCRAPERAPI_KEY com rotação, timeout resiliente e logs informativos | ⚡ Imediato | 🟢 **Concluído** |
-| **Página de Detalhes**| Página interna de anúncio com ficha e galeria completa | 🟡 Médio Prazo | ⏳ *Planejado* |
+| **Página de Detalhes**| Página interna de anúncio com ficha e galeria completa | 🟡 Médio Prazo | 🟢 **Concluído** |
+| **Cache de Listagens (Buscas)** | Sistema de cache com TTL para buscas repetidas e economia de ScraperAPI | 🟡 Médio Prazo | ⏳ *Planejado* |
 | **Novos Portais (Zap/Imovelweb)** | Integrações com Zap Imóveis e Imovelweb | 🟡 Médio Prazo | ⏳ *Planejado* |
 | **Top Buscas Dinâmicas**| Tabela de analytics para alimentar sugestões rápidas em alta | 🔵 Longo Prazo | ⏳ *Planejado* |
 | **Auth & Alertas** | Google OAuth2 e notificações de novos imóveis | 🔵 Longo Prazo | ⏳ *Planejado* |
