@@ -105,6 +105,8 @@ defmodule Kfofo.Scrapers do
       |> interleave_or_dedup()
       |> filter_properties_by_source(source_filter)
 
+    Kfofo.Properties.save_properties(successful_properties)
+
     case {successful_properties, results} do
       {[], [{:error, first_reason} | _]} ->
         {:error, first_reason}

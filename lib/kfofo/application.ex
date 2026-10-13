@@ -14,6 +14,8 @@ defmodule Kfofo.Application do
       {Phoenix.PubSub, name: Kfofo.PubSub},
       # Start the Finch HTTP client for sending emails
       {Finch, name: Kfofo.Finch},
+      # ETS store for properties cache
+      {Kfofo.Properties.Store, []},
       # Start a worker by calling: Kfofo.Worker.start_link(arg)
       # {Kfofo.Worker, arg},
       # Start to serve requests, typically the last entry

@@ -174,5 +174,27 @@ defmodule Kfofo.ScrapersTest do
       assert hd(res.properties).external_id == "qa-20"
       assert hd(res.properties).source == "quintoandar"
     end
+
+    test "persists fetched properties into Kfofo.Properties store" do
+      mock_olx = fn _opts ->
+        {:ok,
+         %{
+           properties: [
+             %{external_id: "store-test-1", title: "Imóvel Cacheado", price: 1500, source: "olx"}
+           ]
+         }}
+      end
+
+      assert {:ok, _} =
+               Scrapers.fetch_all_properties(%{
+                 scrapers: [{:olx, mock_olx}],
+                 state: "sp",
+                 city: "sao-paulo"
+               })
+
+      assert {:ok, prop} = Kfofo.Properties.get_property("store-test-1")
+      assert prop.title == "Imóvel Cacheado"
+      assert prop.price == 1500
+    end
   end
 end

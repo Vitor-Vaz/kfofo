@@ -86,7 +86,8 @@ defmodule Kfofo.Scrapers.QuintoAndar.Parser do
       description: house["shortRentDescription"] || house["shortSaleDescription"] || "",
       location: location,
       details: details,
-      images: images
+      images: images,
+      published_at: nil
     }
   end
 

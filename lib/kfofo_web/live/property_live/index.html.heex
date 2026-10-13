@@ -982,9 +982,15 @@
                         </div>
 
                         <div class="p-4 sm:p-4.5">
-                          <h3 class="text-sm font-bold text-white line-clamp-2 mb-1.5 group-hover:text-orange-400 transition">
+                          <.link
+                            href={
+                              ~p"/properties/#{property.external_id}?#{clean_search_params(@search_form)}"
+                            }
+                            target="_blank"
+                            class="block text-sm font-bold text-white line-clamp-2 mb-1.5 hover:text-orange-400 transition"
+                          >
                             {property.title}
-                          </h3>
+                          </.link>
 
                           <div class="text-xs text-zinc-400 mb-3 flex items-center gap-1.5 truncate">
                             <span class="text-orange-400 flex-shrink-0">📍</span>
@@ -1029,16 +1035,42 @@
                         </div>
                       </div>
 
-                      <div class="px-4 pb-4 pt-0">
-                        <%= if property.url != "" do %>
-                          <a
-                            href={property.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class={"block w-full text-center rounded-xl bg-zinc-800 #{source_button_hover_class(property.source)} hover:text-white py-2 text-xs font-semibold text-zinc-200 border border-zinc-700/60 transition shadow-sm"}
+                      <div class="px-4 pb-4 pt-0 space-y-2">
+                        <.link
+                          href={
+                            ~p"/properties/#{property.external_id}?#{clean_search_params(@search_form)}"
+                          }
+                          target="_blank"
+                          class="w-full flex items-center justify-center gap-1.5 rounded-xl bg-orange-600 hover:bg-orange-500 py-2.5 text-xs font-bold text-white transition shadow-sm hover:shadow-orange-600/30"
+                        >
+                          <span>Ver Detalhes</span>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-3.5 w-3.5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
                           >
-                            Ver no site do {source_portal_name(property.source)} ↗
-                          </a>
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2.5"
+                              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                            />
+                          </svg>
+                        </.link>
+
+                        <%= case property.url != "" do %>
+                          <% true -> %>
+                            <a
+                              href={property.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              class={"block w-full text-center rounded-xl bg-zinc-800/80 #{source_button_hover_class(property.source)} hover:text-white py-1.5 text-[11px] font-medium text-zinc-400 border border-zinc-700/50 transition shadow-sm"}
+                            >
+                              Ver anúncio no {source_portal_name(property.source)} ↗
+                            </a>
+                          <% false -> %>
                         <% end %>
                       </div>
                     </div>

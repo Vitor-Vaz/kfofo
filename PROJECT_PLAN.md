@@ -51,8 +51,8 @@ O **kfofo** é um agregador inteligente de anúncios de imóveis (casas e aparta
     - Interface focada em uma caixa de busca ampla e imersiva no centro da tela com imagem de fundo temática de lares/casas.
   - **Página de Resultados de Busca**:
     - Após submeter os filtros, transição para tela com layout em duas seções: barra lateral dedicada para filtros de pesquisa e área principal expandida com os cards de imóveis.
-  - **Botão de Detalhes & Página Interna do Imóvel (`/properties/:id`)**:
-    - Cada card terá botão dedicado de "Detalhes" abrindo a ficha completa do imóvel (galeria em alta resolução, ficha técnica com condomínio/IPTU, descrição completa e link de origem).
+  - 🟢 **Botão de Detalhes & Página Interna do Imóvel (`/properties/:id`)**:
+    - Cada card conta com botão dedicado "Ver Detalhes" abrindo a ficha completa do imóvel (galeria em alta resolução com navegação e modal tela cheia, ficha financeira com condomínio/IPTU, descrição completa, mapa de localização e link de origem).
 - **Expansão de Marketplaces (Novos Scrapers)**:
   - 🟢 **QuintoAndar** (Parser Next.js SSR + extração de galeria e normalização multi-portal).
   - 🟡 **Zap Imóveis** (Fase 3).
@@ -102,7 +102,7 @@ O **kfofo** é um agregador inteligente de anúncios de imóveis (casas e aparta
 | **Filtro por Fonte/Portal** | Filtro exclusivo por marketplace (Todos, Apenas OLX, Apenas QuintoAndar) | 🟡 Médio Prazo | 🟢 **Concluído** |
 | **Animação Unificada de Loading** | Tela animada moderna com mensagem genérica e skeleton grid durante a busca paralela | ⚡ Imediato | 🟢 **Concluído** |
 | **Proxy Residencial ScraperAPI** | Suporte a proxy residencial via SCRAPERAPI_KEY com rotação, timeout resiliente e logs informativos | ⚡ Imediato | 🟢 **Concluído** |
-| **Página de Detalhes**| Página interna de anúncio com ficha e galeria completa | 🟡 Médio Prazo | ⏳ *Planejado* |
+| **Página de Detalhes**| Página interna de anúncio com ficha e galeria completa | 🟡 Médio Prazo | 🟢 **Concluído** |
 | **Novos Portais (Zap/Imovelweb)** | Integrações com Zap Imóveis e Imovelweb | 🟡 Médio Prazo | ⏳ *Planejado* |
 | **Top Buscas Dinâmicas**| Tabela de analytics para alimentar sugestões rápidas em alta | 🔵 Longo Prazo | ⏳ *Planejado* |
 | **Auth & Alertas** | Google OAuth2 e notificações de novos imóveis | 🔵 Longo Prazo | ⏳ *Planejado* |

@@ -363,6 +363,7 @@ defmodule KfofoWeb.PropertyLive.Index do
   def handle_async(:fetch_properties, {:ok, {:ok, result}}, socket) do
     sort_by = socket.assigns[:sort_by] || "recent"
     sorted_properties = sort_properties(result.properties, sort_by)
+    Kfofo.Properties.save_properties(result.properties)
 
     socket =
       socket
@@ -634,7 +635,7 @@ defmodule KfofoWeb.PropertyLive.Index do
 
   defp sort_properties(properties, _), do: properties
 
-  defp clean_params(params) do
+  def clean_search_params(params) when is_map(params) do
     params
     |> Enum.reject(fn
       {_k, v} when is_nil(v) or v == "" -> true
@@ -644,4 +645,8 @@ defmodule KfofoWeb.PropertyLive.Index do
     end)
     |> Map.new()
   end
+
+  def clean_search_params(_), do: %{}
+
+  defp clean_params(params), do: clean_search_params(params)
 end

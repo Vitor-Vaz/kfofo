@@ -19,6 +19,7 @@ defmodule KfofoWeb.Router do
 
     live "/", PropertyLive.Index, :home
     live "/properties", PropertyLive.Index, :results
+    live "/properties/:id", PropertyLive.Show, :show
   end
 
   # Other scopes may use custom stacks.
