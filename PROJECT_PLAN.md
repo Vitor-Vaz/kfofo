@@ -100,7 +100,7 @@ O **kfofo** é um agregador inteligente de anúncios de imóveis (casas e aparta
 | **Ordenação Resultados**| Ordenar por menor preço, maior preço e mais recentes | 🟡 Médio Prazo | 🟢 **Concluído** |
 | **Filtros Adicionais** | Filtro de Tipo de Imóvel (apto/casa/quarto) e Vagas (1 a 5+) | 🟡 Médio Prazo | 🟢 **Concluído** |
 | **Filtro por Fonte/Portal** | Filtro exclusivo por marketplace (Todos, Apenas OLX, Apenas QuintoAndar) | 🟡 Médio Prazo | 🟢 **Concluído** |
-| **Loaders por Portal & Streaming** | Componentes dedicados de carregamento para OLX e QuintoAndar com streaming assíncrono de resultados | ⚡ Imediato | 🟢 **Concluído** |
+| **Animação Unificada de Loading** | Tela animada moderna com mensagem genérica e skeleton grid durante a busca paralela | ⚡ Imediato | 🟢 **Concluído** |
 | **Proxy Residencial ScraperAPI** | Suporte a proxy residencial via SCRAPERAPI_KEY com rotação, timeout resiliente e logs informativos | ⚡ Imediato | 🟢 **Concluído** |
 | **Página de Detalhes**| Página interna de anúncio com ficha e galeria completa | 🟡 Médio Prazo | ⏳ *Planejado* |
 | **Novos Portais (Zap/Imovelweb)** | Integrações com Zap Imóveis e Imovelweb | 🟡 Médio Prazo | ⏳ *Planejado* |
